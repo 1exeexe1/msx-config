@@ -1,498 +1,991 @@
--- Deobfuscated IronBrew Script
--- Original: Hunterstorm's unlisted t (Build Game Script)
--- Version: 1.0.2
--- Deobfuscated and reconstructed
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local VE = loadstring(game:HttpGet("https://pastebin.com/raw/90Ah2xj8"))()
+task.wait(0.5) -- make sure script received version
+local currentVersion = "1.0.2"
+if VE ~= currentVersion then
+	Rayfield:Notify({
+		Title = "OUT OF DATE!!",
+		Content = "UPDATED VERSION: ".. VE .. ", YOUR VERSION: ".. currentVersion,
+		Duration = 6.5,
+		Image = 4483362458,
+	})
+elseif VE == currentVersion then
+	Rayfield:Notify({
+		Title = "Up to date",
+		Content = "Version ".. currentVersion,
+		Duration = 6.5,
+		Image = 4483362458,
+	})
+	Rayfield:Notify({
+		Title = "WARNING!!",
+		Content = "IF YOU DO NOT HAVE BKIT, DO NOT EXECUTE THIS SCRIPT UNTIL YOU HAVE BKIT ELSE SOME TABS MIGHT NOT SHOW!",
+		Duration = 10,
+		Image = 4483362458,
+	})
+end
 
--- Services
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Backpack = LocalPlayer:WaitForChild("Backpack")
-local Mouse = LocalPlayer:GetMouse()
+local plr = Players.LocalPlayer
+local mouse = plr:GetMouse()
+local cam = workspace.CurrentCamera
+local detailedPath = false
+local shovel = false
+local delete = false
+local rainbow = false
+local rainbowSky = false
+local boxMode = false
+local selectedBlock = false
 
-local CurrentVersion = "1.0.2"
-local UpdateUrl = "https://sirius.menu/rayfield"
-local PastebinUrl = "https://pastebin.com/raw/90Ah2xj8"
+local material = "plastic"
+local currentMaterial = "neon"
+local h = 0
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local block = nil
+local waitingForClick = false
+
+local function normalToFace(n)
+	local a = math.abs
+	if a(n.X) > a(n.Y) and a(n.X) > a(n.Z) then
+		return n.X > 0 and Enum.NormalId.Right or Enum.NormalId.Left
+	elseif a(n.Y) > a(n.Z) then
+		return n.Y > 0 and Enum.NormalId.Top or Enum.NormalId.Bottom
+	else
+		return n.Z > 0 and Enum.NormalId.Back or Enum.NormalId.Front
+	end
+end
+local paint
+local function getPaintEvent()
+	local char = plr.Character
+	if char then
+		local tool = char:FindFirstChild("Paint") or plr.Backpack:FindFirstChild("Paint")
+		if tool then
+			paint = tool
+			local scr = tool:FindFirstChild("Script")
+			if scr then
+				return scr:FindFirstChild("Event")
+			end
+		end
+	end
+end
+
+local event = getPaintEvent()
+
+
+local mode = "both \240\159\164\157"
 
 local Window = Rayfield:CreateWindow({
-    Name = "Server Abuse Gui",
-    LoadingTitle = "Server Abuse Gui",
-    LoadingSubtitle = "by Rnexeexe",
-    Discord = {
-        Enabled = false,
-        Invite = "5bjPEgka",
-        RememberJoins = true
-    },
-    KeySystem = false,
-    KeySettings = {
-        Title = "key system",
-        Subtitle = "key system",
-        Note = "join our discord server ",
-        FileName = "Key",
-        SaveKey = true,
-        GrabKeyFromSite = true,
-        Key = {"key"}
-    }
+	Name = "Hunterstorm's private trolling ui",
+	LoadingTitle = "private and COOLER THAN BEFORE!!",
+	LoadingSubtitle = "by XxHunterStormBytexX4",
+	ToggleUIKeybind = "K",
+	ConfigurationSaving = { Enabled = true, FileName = "Big Hub" }
 })
 
--- Configuration
-getgenv().ConfigurationSaving = {
-    BigHub = {}
-}
-local MainTab = Window:CreateTab("main", "terminal")
-local PlayersTab = Window:CreateTab("players", "users-round")
-local ChangelogsTab = Window:CreateTab("Changelogs", "cog")
-local CreditsTab = Window:CreateTab("creds", "credits")
+local Tab = Window:CreateTab("main", "terminal")
 
-MainTab:CreateButton({
-    Name = "infinite yield",
-    Callback = function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
-    end
-})
-local MaterialDropdown = MainTab:CreateDropdown({
-    Name = "rainbow material",
-    Options = {"tiles", "bricks", "planks", "ice", "toxic", "anchor"},
-    CurrentOption = {"tiles"},
-    MultipleOptions = false,
-    Flag = "MaterialDropdown",
-    Callback = function(Options)
-        -- Material selection callback
-    end
+Tab:CreateButton({
+	Name = "infinite yield",
+	Callback = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+	end
 })
 
--- Rainbow Paint Toggle
-local RainbowPaintToggle = MainTab:CreateToggle({
-    Name = "rainbow paint",
-    CurrentValue = false,
-    Flag = "RainbowPaint",
-    Callback = function(Value)
-        getgenv().RainbowPaint = Value
-    end
+
+Tab:CreateButton({
+	Name = "join xl (in case u cant join because roblox thinks ur spamming)",
+	Callback = function()
+		game.ReplicatedStorage.System:FireServer("xl")
+	end
 })
 
--- Rainbow Sky Toggle
-local RainbowSkyToggle = MainTab:CreateToggle({
-    Name = "rainbow sky",
-    CurrentValue = false,
-    Flag = "RainbowSky",
-    Callback = function(Value)
-        getgenv().RainbowSky = Value
-    end
+Tab:CreateDropdown({
+	Name = "rainbow material",
+	Options = {"smooth", "plastic", "tiles", "bricks", "planks", "ice", "neon", "toxic", "anchor"},
+	CurrentOption = {"neon"},
+	MultipleOptions = false,
+	Flag = "MaterialDropdown",
+	Callback = function(option)
+		for i, v in ipairs(option) do
+			currentMaterial = v
+		end
+	end
 })
 
--- Block Path Type Dropdown
-local Dropdown1 = MainTab:CreateDropdown({
-    Name = "block path type",
-    Options = {"detailed", "normal"},
-    CurrentOption = {"detailed"},
-    MultipleOptions = false,
-    Flag = "Dropdown1",
-    Callback = function(Options)
-        -- Block path type callback
-    end
+Tab:CreateToggle({
+	Name = "rainbow paint",
+	CurrentValue = false,
+	Flag = "RainbowPaint",
+	Callback = function(v)
+		rainbow = v
+
+	end
 })
 
--- Blocks Path Button
-MainTab:CreateButton({
-    Name = "blocks path",
-    Callback = function()
-        -- Blocks path functionality
-        local SelectedBlock = getgenv().SelectedBlock
-        if SelectedBlock then
-            -- Create path with selected block
-        end
-    end
+Tab:CreateToggle({
+	Name = "shovel",
+	CurrentValue = false,
+	Flag = "shaval",
+	Callback = function(v)
+		shovel = v
+
+	end
 })
 
--- Delete Aura Input
-local Input1 = MainTab:CreateInput({
-    Name = "spray paint",
-    PlaceholderText = "Enter value...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(Text)
-        -- Spray paint functionality
-    end
+Tab:CreateToggle({
+	Name = "delete",
+	CurrentValue = false,
+	Flag = "deeleeete",
+	Callback = function(v)
+		delete = v
+	end
 })
 
--- Delete Aura Button
-MainTab:CreateButton({
-    Name = "Delete aura (CLICK AT POS)",
-    Callback = function()
-        getgenv().DeleteAura = true
-        -- Delete aura functionality
-        local DeleteTool = Backpack:FindFirstChild("Delete")
-        if DeleteTool then
-            local Script = DeleteTool:FindFirstChild("Script")
-            if Script then
-                local Event = Script:FindFirstChild("Event")
-                if Event then
-                    -- Fire delete event
-                end
-            end
-        end
-    end
+Tab:CreateToggle({
+	Name = "rainbow sky",
+	CurrentValue = false,
+	Flag = "RainbowSky",
+	Callback = function(v)
+		rainbowSky = v
+
+	end
 })
 
--- Reset Paint Variable Button
-MainTab:CreateButton({
-    Name = "reset paint variable (ONLY IF BUGGED)",
-    Callback = function()
-        getgenv().RainbowPaint = false
-        -- Reset paint
-    end
+local Button = Tab:CreateButton({
+	Name = "Select Block",
+	Callback = function()
+		waitingForClick = true
+	end,
 })
 
--- Set RepStorage Brick Text Button
-MainTab:CreateButton({
-    Name = "set RepStorage brick text",
-    Callback = function()
-        local Brick = ReplicatedStorage:WaitForChild("Brick")
-        if Brick then
-            StarterGui:SetCore("SendNotification", {
-                Title = "RepStorage Brick Text Set",
-                Text = "for debugging",
-                Duration = 3
-            })
-        end
-    end
+mouse.Button1Down:Connect(function()
+	if not waitingForClick then return end
+	if mouse.Target then
+		block = mouse.Target
+		Rayfield:Notify({
+			Title = "block selected",
+			Content = "Selected block: ".. block:GetFullName(),
+			Duration = 6.5,
+			Image = 4483362458,
+		})
+	end
+	waitingForClick = false
+end)
+local currentBlockPathType = "detailed"
+local Dropdown = Tab:CreateDropdown({
+	Name = "block path type",
+	Options = {"normal","detailed", "rainbow detailed", "rainbow normal"},
+	CurrentOption = {"detailed"},
+	MultipleOptions = false,
+	Flag = "Dropdown1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+	Callback = function(Options)
+		for i, v in ipairs(Options) do
+			currentBlockPathType = v
+		end
+	end,
 })
 
--- Toxic RepStorage Part Button
-MainTab:CreateButton({
-    Name = "toxic repstorage part",
-    Callback = function()
-        local Brick = ReplicatedStorage:WaitForChild("Brick")
-        if Brick then
-            -- Set to toxic
-        end
-    end
+Tab:CreateToggle({
+	Name = "blocks path",
+	CurrentValue = false,
+	Flag = "dbp",
+	Callback = function(v)
+		--	if not block then return end
+		detailedPath = v
+	end
+})
+local currentText = "GET NOOBED BY HUNTERSTORM"
+local spraypaint = false
+local Input = Tab:CreateInput({
+	Name = "spray paint",
+	CurrentValue = "",
+	PlaceholderText = "GET NOOBED BY HUNTERSTORM",
+	RemoveTextAfterFocusLost = false,
+	Flag = "Input1",
+	Callback = function(Text)
+		currentText = Text
+	end,
 })
 
--- Unanchor RepStorage Part Button
-MainTab:CreateButton({
-    Name = "unanchor repstorage part",
-    Callback = function()
-        local Brick = ReplicatedStorage:WaitForChild("Brick")
-        if Brick then
-            Brick.Anchored = false
-        end
-    end
+Tab:CreateToggle({
+	Name = "spray paint",
+	CurrentValue = false,
+	Flag = "dbp",
+	Callback = function(v)
+		--	if not block then return end
+		spraypaint = v
+	end
+})
+local ka = false
+Tab:CreateToggle({
+	Name = "kill aura",
+	CurrentValue = false,
+	Flag = "dbp",
+	Callback = function(v)
+		--	if not block then return end
+		ka = v
+		print(ka)
+		print("2: ".. tostring(v))
+	end
+})
+local DeleteClickAura = false
+Tab:CreateToggle({
+	Name = "Delete aura (CLICK AT POSITION)",
+	CurrentValue = false,
+	Flag = "dca",
+	Callback = function(v)
+		DeleteClickAura = v
+		print(ka)
+		print("2: ".. tostring(v))
+	end
 })
 
--- BKit Breaker Button
-MainTab:CreateButton({
-    Name = "BREAK BKIT (EQUIP DELETE AURA)",
-    Callback = function()
-        -- BKit breaker functionality
-        local DeleteTool = Backpack:FindFirstChild("Delete")
-        if DeleteTool then
-            local Parent = DeleteTool.Parent
-            -- Break bkit logic
-        end
-    end
+
+local backpack = plr:WaitForChild("Backpack")
+
+local deleteTool = backpack:FindFirstChild("Delete")
+local deleteEvent = deleteTool
+	and deleteTool:FindFirstChild("Script")
+	and deleteTool.Script:FindFirstChild("Event")
+
+local shovelTool = backpack:FindFirstChild("Shovel")
+local shovelEvent = shovelTool
+	and shovelTool:FindFirstChild("Script")
+	and shovelTool.Script:FindFirstChild("Event")
+
+local function refreshTools()
+	local char = plr.Character
+	if not char then return end
+
+	local backpack = plr.Backpack
+
+	local function findTool(toolName)
+		return char:FindFirstChild(toolName) or backpack:FindFirstChild(toolName)
+	end
+
+	--local paintTool = findTool("Paint")
+	--	event = paintTool and paintTool:FindFirstChild("Script") and paintTool.Script:FindFirstChild("Event") or nil
+
+	local shovelTool = findTool("Shovel")
+	shovelEvent = shovelTool and shovelTool:FindFirstChild("Script") and shovelTool.Script:FindFirstChild("Event") or nil
+
+	local deleteTool = findTool("Delete")
+	deleteEvent = deleteTool and deleteTool:FindFirstChild("Script") and deleteTool.Script:FindFirstChild("Event") or nil
+end
+
+local function resetPaint()
+	local char = plr.Character
+	if not char then return end
+
+	local backpack = plr.Backpack
+
+	local function findTool(toolName)
+		return char:FindFirstChild(toolName) or backpack:FindFirstChild(toolName)
+	end
+	local PaintTool = findTool("Paint")
+	if PaintTool then
+		local r = PaintTool:FindFirstChild("Script")
+		if r then
+			event = r:FindFirstChild("Event")
+		end
+	end
+end
+
+local Button = Tab:CreateButton({
+	Name = "reset paint variable (ONLY FOR PAINT, NO OTHER TOOL!!)",
+	Callback = function()
+		resetPaint()
+	end,
 })
 
--- Delcubes All Button
-MainTab:CreateButton({
-    Name = "Delcubes all",
-    Callback = function()
-        -- Delete all cubes
-        for _, Part in ipairs(Workspace.Bricks:GetDescendants()) do
-            if Part:IsA("BasePart") then
-                local DeleteTool = Backpack:FindFirstChild("Delete")
-                if DeleteTool then
-                    local Script = DeleteTool:FindFirstChild("Script")
-                    if Script then
-                        local Event = Script:FindFirstChild("Event")
-                        if Event then
-                            Event:FireServer(unpack({Part.Position, "both", Color3.new(1, 1, 1), "spray"}))
-                        end
-                    end
-                end
-            end
-        end
-    end
+local Button = Tab:CreateButton({
+	Name = "reset tool variables",
+	Callback = function()
+		refreshTools()
+	end,
 })
 
--- Remove BKit Sprays Button
-MainTab:CreateButton({
-    Name = "remove bkit sprays (Broken)",
-    Callback = function()
-        -- Remove bkit sprays functionality
-    end
+local Tab = Window:CreateTab("OP", "terminal")
+local currentRepStorageBrickText = "Hello, world!"
+local Input = Tab:CreateInput({
+	Name = "repStorage's brick text",
+	CurrentValue = "",
+	PlaceholderText = "Hello, world!",
+	RemoveTextAfterFocusLost = false,
+	Flag = "Input1",
+	Callback = function(Text)
+		currentRepStorageBrickText = Text
+	end,
 })
 
---===============================================
--- PLAYERS TAB FEATURES
---===============================================
+local function RepStorageText(txt, side)
+	local args = {
+		game.ReplicatedStorage:WaitForChild("Brick"),
+		side,
+		game.ReplicatedStorage:WaitForChild("Brick").Position,
+		"both \240\159\164\157",
+		Color3.new(0.8784313797950745, 0.8784313797950745, 0.43921568989753723),
+		"spray",
+		tostring(txt)
+	}
+	game:GetService("Players").LocalPlayer.Character:WaitForChild("Paint"):WaitForChild("Script"):WaitForChild("Event"):FireServer(unpack(args))
 
--- Store ESP objects for cleanup
-local ESPObjects = {}
+end
 
--- Enlightened Users ESP Toggle
-local eue = PlayersTab:CreateToggle({
-    Name = "enlightened users ESP",
-    CurrentValue = false,
-    Flag = "eue",
-    Callback = function(Value)
-        getgenv().EnlightenedESP = Value
-        if Value then
-            -- Enable enlightened ESP
-            spawn(function()
-                while getgenv().EnlightenedESP do
-                    for _, Player in ipairs(Players:GetPlayers()) do
-                        if Player ~= LocalPlayer then
-                            local Character = Player.Character
-                            if Character then
-                                local Humanoid = Character:FindFirstChild("Humanoid")
-                                if Humanoid and Humanoid.Health > 0 then
-                                    -- ESP logic
-                                end
-                            end
-                        end
-                    end
-                    task.wait(0.1)
-                end
-            end)
-        end
-    end
+local function sneakyforceEquip(gear)
+	local t = plr.Backpack:FindFirstChild(gear)
+	if t then
+		t.Parent = plr.Character
+		t.Parent = plr.Backpack
+		print("SET GEAR: ".. gear)
+	end
+	return t
+end
+local function forceEquip(gear)
+	local t = plr.Backpack:FindFirstChild(gear)
+	if t then
+		t.Parent = plr.Character
+		print("SET GEAR: ".. gear)
+	end
+	return t
+end
+
+local Button = Tab:CreateButton({
+	Name = "set RepStorage brick's text",
+	Callback = function()
+		resetPaint()
+
+		local player = game.Players.LocalPlayer
+		local char = player.Character
+		if not char then return end
+
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+
+		local brick = game.ReplicatedStorage:FindFirstChild("Brick")
+		if not brick then warn('not brick') end
+
+		--hrp.Anchored = true
+
+		forceEquip("Paint")
+
+		local sides = {
+			"Left",
+			"Right",
+			"Back",
+			"Front",
+			"Top",
+			"Bottom"
+		}
+
+		for _, side in ipairs(sides) do
+			brick.Position = hrp.Position
+			RepStorageText(currentRepStorageBrickText, side)
+			game:GetService("StarterGui"):SetCore("SendNotification", {
+				Title = "RepStorage Brick Text Set",
+				Text = "for debugging",
+				Duration = 5
+			})
+			task.wait(0.15)
+		end
+
+		--hrp.Anchored = false
+	end,
 })
 
--- Invisible Users ESP Toggle
-PlayersTab:CreateToggle({
-    Name = "invisible users ESP (best)",
-    CurrentValue = false,
-    Flag = "invis",
-    Callback = function(Value)
-        getgenv().InvisibleESP = Value
-        if Value then
-            spawn(function()
-                while getgenv().InvisibleESP do
-                    for _, Player in ipairs(Players:GetPlayers()) do
-                        if Player ~= LocalPlayer then
-                            local Character = Player.Character
-                            if Character then
-                                local Torso = Character:FindFirstChild("Torso")
-                                if Torso and Torso.Transparency > 0 then
-                                    -- Create ESP highlight (only if not already created)
-                                    if not Character:FindFirstChild("invis_Highlight") then
-                                        local Highlight = Instance.new("Highlight")
-                                        Highlight.Name = "invis_Highlight"
-                                        Highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                                        Highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-                                        Highlight.FillTransparency = 0.5
-                                        Highlight.OutlineTransparency = 0
-                                        Highlight.Parent = Character
-                                        
-                                        -- Store reference for cleanup
-                                        ESPObjects[Player] = Highlight
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    task.wait(0.1)
-                end
-            end)
-        else
-            -- Remove ESP
-            for Player, Highlight in pairs(ESPObjects) do
-                if Highlight and Highlight.Parent then
-                    Highlight:Destroy()
-                end
-                ESPObjects[Player] = nil
-            end
-            -- Fallback cleanup for any remaining highlights
-            for _, Player in ipairs(Players:GetPlayers()) do
-                if Player ~= LocalPlayer then
-                    local Character = Player.Character
-                    if Character then
-                        local Highlight = Character:FindFirstChild("invis_Highlight")
-                        if Highlight then
-                            Highlight:Destroy()
-                        end
-                    end
-                end
-            end
-        end
-    end
+local Button = Tab:CreateButton({
+	Name = "toxic repstorage part",
+	Callback = function()
+		local repStorage = game.ReplicatedStorage:WaitForChild("Brick")
+		resetPaint()
+		event:FireServer(
+			repStorage,
+			"Front",
+			vector.create(repStorage.Position.X, repStorage.Position.Y, repStorage.Position.Z),
+			"both \240\159\164\157",
+			Color3.new(1,1,1),
+			"toxic",
+			""
+		)
+	end,
 })
 
---===============================================
--- CHANGELOGS TAB
---===============================================
-
-ChangelogsTab:CreateParagraph({
-    Title = "v1.0.3 (19/02/2026)",
-    Content = "- bkit breaker (fr)"
+local Button = Tab:CreateButton({
+	Name = "unanchor repstorage part",
+	Callback = function()
+		local repStorage = game.ReplicatedStorage:WaitForChild("Brick")
+		resetPaint()
+		event:FireServer(
+			repStorage,
+			"Front",
+			vector.create(repStorage.Position.X, repStorage.Position.Y, repStorage.Position.Z),
+			"both \240\159\164\157",
+			Color3.new(1,1,1),
+			"anchor",
+			""
+		)
+	end,
 })
 
-ChangelogsTab:CreateParagraph({
-    Title = "v1.0.2 (18/01/2026)",
-    Content = "- added more features"
+local Button = Tab:CreateButton({
+	Name = "BREAK BKIT (EQUIP DELETE BEFORE RUN, UNEQUIP DELETE AFTER RUN)",
+	Callback = function()
+		local args = {
+			game.ReplicatedStorage.Brick,
+			game.ReplicatedStorage.Brick.Position
+		}
+		
+		game:GetService("Players").LocalPlayer:WaitForChild("Backpack"):WaitForChild("Delete"):WaitForChild("Script"):WaitForChild("Event"):FireServer(unpack(args))
+
+	end,
 })
 
-ChangelogsTab:CreateParagraph({
-    Title = "v1.0.1 (15/01/2026)",
-    Content = "- Added initial features"
+
+local Tab = Window:CreateTab("players", "users-round")
+
+local function hasEnlighten(plr)
+	if plr.Backpack and plr.Backpack:FindFirstChild("The Arkenstone") then
+		return true
+	end
+	if plr.Character and plr.Character:FindFirstChild("The Arkenstone") then
+		return true
+	end
+	return false
+end
+local highlights = {}
+local invis = {}
+local function highlight(target, colour)
+	local c :Player = target
+	local character = c.Character
+	if character then
+		local highlight = character:FindFirstChild("enlightenHighlight")
+		if not highlight then
+			local newHighlight = Instance.new("Highlight", character)
+			newHighlight.Name = "enlightenHighlight"
+			newHighlight.FillColor = Color3.new(0, 0.733333, 1)
+			newHighlight.FillTransparency = 0.5
+		end
+	end
+end
+
+local function invisibleAlert(target)
+	local c :Player = target
+	local character = c.Character
+	if character then
+		local function gui()
+			local billboardui = Instance.new("BillboardGui", character)
+			billboardui.Size = UDim2.new(0,200,0,50)
+			billboardui.AlwaysOnTop = true
+			billboardui.Name = "invis"
+			local textLabel = Instance.new("TextLabel", billboardui)
+			textLabel.Text = "(INVIS USER: ".. target.Name.. ")"
+			textLabel.TextScaled = true
+
+			textLabel.RichText = true -- extra bigger text
+			textLabel.TextColor3 = Color3.fromRGB(255, 50, 0)
+			textLabel.FontFace.Bold = true
+			textLabel.BackgroundTransparency = 1
+			textLabel.Size = UDim2.new(1,0,1,0)
+		end
+		local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+		if torso and torso.Transparency == 1 then
+
+			gui()
+		else
+			local ui = character:FindFirstChild("invis")
+			if ui then
+				ui:Destroy()
+			end
+		end
+
+	end
+end
+
+local showEnlightens = false
+local showInvis = false
+Tab:CreateToggle({
+	Name = "enlightened users ESP",
+	CurrentValue = false,
+	Flag = "eue",
+	Callback = function(v)
+		showEnlightens = v
+	end
 })
-
---===============================================
--- CREDITS TAB
---===============================================
-
-CreditsTab:CreateParagraph({
-    Title = "Credits",
-    Content = "me (HunterStorm) for creating this script"
+Tab:CreateToggle({
+	Name = "invisible users ESP(best always on cuz enlightend esp doesnt show invisible enlightend users)",
+	CurrentValue = false,
+	Flag = "dbp",
+	Callback = function(v)
+		showInvis = v
+	end
 })
+task.spawn(function()
+	while task.wait(.5) do
+		if showEnlightens or showInvis then
+			for _, Player in ipairs(game.Players:GetPlayers()) do
+				if Player ~= game.Players.LocalPlayer then
+					if showEnlightens then
+						local hasenli = hasEnlighten(Player)
+						if hasenli then
+							highlight(Player)
+						end
+					else
+						for i, v in ipairs(highlights) do
+							v:Destroy()
+							table.remove(highlights, table.find(highlights, v))
+						end
 
-CreditsTab:CreateParagraph({
-    Title = "Tips",
-    Content = "if u have any tips or suggestions, let me know!"
-})
-
---===============================================
--- UTILITY FUNCTIONS
---===============================================
-
--- Raycast Parameters
-local characterA = RaycastParams.new()
-characterA.FilterType = Enum.RaycastFilterType.Exclude
-characterA.FilterDescendantsInstances = {Character}
-
--- Rainbow Paint Loop
-spawn(function()
-    while true do
-        if getgenv().RainbowPaint then
-            local PaintTool = Character:FindFirstChild("Paint") or Backpack:FindFirstChild("Paint")
-            if PaintTool then
-                local Script = PaintTool:FindFirstChild("Script")
-                if Script then
-                    local Event = Script:FindFirstChild("Event")
-                    if Event then
-                        -- Rainbow paint logic
-                        local hue = (tick() % 5) / 5
-                        local color = Color3.fromHSV(hue, 1, 1)
-                        -- Fire paint event
-                    end
-                end
-            end
-        end
-        task.wait(0.1)
-    end
+					end
+					if showInvis then
+						invisibleAlert(Player)
+					end
+				end
+			end
+		end
+	end
 end)
 
--- Delete Aura Loop
-spawn(function()
-    while true do
-        if getgenv().DeleteAura then
-            local DeleteTool = Backpack:FindFirstChild("Delete")
-            if DeleteTool then
-                local Script = DeleteTool:FindFirstChild("Script")
-                if Script then
-                    local Event = Script:FindFirstChild("Event")
-                    if Event then
-                        -- Get LocalPlayer's HRP for distance calculation
-                        local LocalHRP = Character:FindFirstChild("HumanoidRootPart")
-                        if not LocalHRP then
-                            task.wait(0.1)
-                            continue
-                        end
-                        
-                        -- Get nearest HRP
-                        local NearestHRP = nil
-                        local MinDistance = math.huge
 
-                        for _, Player in ipairs(Players:GetPlayers()) do
-                            if Player ~= LocalPlayer then
-                                local TargetCharacter = Player.Character
-                                if TargetCharacter then
-                                    local HumanoidRootPart = TargetCharacter:FindFirstChild("HumanoidRootPart")
-                                    if HumanoidRootPart then
-                                        -- FIXED: Compare to LocalPlayer's position, not itself
-                                        local Distance = (HumanoidRootPart.Position - LocalHRP.Position).Magnitude
-                                        if Distance < MinDistance then
-                                            MinDistance = Distance
-                                            NearestHRP = HumanoidRootPart
-                                        end
-                                    end
-                                end
-                            end
-                        end
+local Tab = Window:CreateTab("Changelogs", "book-open-text")
+local Paragraph = Tab:CreateParagraph({Title = "v1.0.1 (15/01/2026)", Content = [[
+- Added changelogs
+- Fixed spray paint
+- Fixed unanchored rainbow blocks (Bit buggy, will be improved)
+- Added players
+- Added esp for invisible users and enlightened users
+- New icons for the tabs
+- Creds tab
+- Tips tab
+- Added a version checker
+- got complaints of "I DONT HAVE SETTINGS!!" so i moved some setting buttons to main (brax ur either blind or im just better)
+]]})
+local Paragraph = Tab:CreateParagraph({Title = "v1.0.2 (18/01/2026)", Content = [[
+- added delete aura
+- to use delete aura, equip delete tool whereu  wanna use it, run off, use freecam and go back to where
+you last equipped it, and enable delete aura and click at the position, this will create a 20x20x20 box
+that delets anything inside of it
+]]})
 
-                        if NearestHRP then
-                            -- Create delete aura part
-                            local DeleteAuraPart = Instance.new("Part")
-                            DeleteAuraPart.Size = Vector3.new(10, 10, 10)
-                            DeleteAuraPart.Parent = Workspace
-                            DeleteAuraPart.Transparency = 0.5
-                            DeleteAuraPart.Color = Color3.fromRGB(255, 0, 0)
-                            DeleteAuraPart.Material = Enum.Material.Neon
-                            DeleteAuraPart.Name = "DeleteAura"
-                            DeleteAuraPart.Anchored = true
-                            DeleteAuraPart.CanCollide = false
+local Tab = Window:CreateTab("creds", "hammer")
+local Paragraph = Tab:CreateParagraph({Title = "credits", Content = [[
+me (HunterStorm) for creating and writing the whole script
+Sirius for the wonderful optimised ui library (and for the ESP system im going to replace the current system with)
+brax for being a little jerk crying about settings tab not showing
+boona for suggesting a few things
+^ yes u 2 are the only people with the script apart from me
+]]})
 
-                            -- Get parts in bounds
-                            local OverlapParams = OverlapParams.new()
-                            OverlapParams.FilterType = Enum.RaycastFilterType.Exclude
-                            -- FIXED: Exclude the aura part itself and character, not Workspace.Bricks
-                            OverlapParams.FilterDescendantsInstances = {DeleteAuraPart, Character}
+local Tab = Window:CreateTab("tips", "book-open-text")
+local Paragraph = Tab:CreateParagraph({Title = "credits", Content = [[
+if u have a tool and ur scared ur going to lose it from clearinv, use infinite yield and do boxreach <number> (or do smth like 20)
+and then start spamming backspace so u keep dropping it, the reach will force u to pick it back up
+and if ur lucky, when the clearinv command is sent, the tool will stay and will not be deleted
+this doesnt guarantee ur tool from being safe BUT it could work
+if it does work, you'd want to remove the reach
+so do noreach or unreach in infinite yield so it removes the reach
 
-                            local Parts = Workspace:GetPartBoundsInBox(CFrame.new(NearestHRP.Position), Vector3.new(10, 10, 10), OverlapParams)
+sorry if this is confusing ok guys im not good with teaching honestly a bit stressed every day
+]]})
 
-                            for _, Part in ipairs(Parts) do
-                                if Part:IsA("BasePart") and not Part:IsDescendantOf(Workspace.Bricks) then
-                                    Event:FireServer(unpack({Part.Position, "both", Color3.fromHSV((tick() % 5) / 5, 1, 1), "spray"}))
-                                end
-                            end
-                            
-                            -- Clean up the aura part after use
-                            task.delay(0.1, function()
-                                if DeleteAuraPart and DeleteAuraPart.Parent then
-                                    DeleteAuraPart:Destroy()
-                                end
-                            end)
-                        end
-                    end
-                end
-            end
-        end
-        task.wait(0.1)
-    end
-end)
+local Tab = Window:CreateTab("settings", "cog")
 
--- Rainbow Sky Loop
-spawn(function()
-    while true do
-        if getgenv().RainbowSky then
-            -- Rainbow sky logic
-            local hue = (tick() % 10) / 10
-            -- Apply sky color
-        end
-        task.wait(0.1)
-    end
-end)
-
--- Block Selection
-getgenv().SelectedBlock = nil
-
--- Notify user
-Rayfield:Notify({
-    Title = "Script Loaded",
-    Content = "Hunterstorm's unlisted t v" .. CurrentVersion .. " loaded successfully!",
-    Duration = 5,
-    Image = "check"
+local Button = Tab:CreateButton({
+	Name = "reset paint variable (ONLY FOR PAINT, NO OTHER TOOL!!)",
+	Callback = function()
+		resetPaint()
+	end,
 })
 
-print("Script loaded successfully!")
+local Button = Tab:CreateButton({
+	Name = "reset tool variables",
+	Callback = function()
+		refreshTools()
+	end,
+})
 
-Rayfield:LoadConfiguration()
+
+local Players = game:GetService("Players")
+
+
+
+
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Exclude
+rayParams.FilterDescendantsInstances = { plr.Character }
+local char = plr.Character or plr.characterAdded:Wait()
+
+local function getNearestBlock(pos)
+	local folder = workspace:FindFirstChild("Bricks")
+	if not folder then return end
+
+	local playerFolder = folder:FindFirstChild(plr.Name)
+	if not playerFolder then return end
+
+	local nearest, nearestDist
+
+	for _, p in ipairs(playerFolder:GetDescendants()) do
+		if p:IsA("BasePart") then
+			local d = (p.Position - pos).Magnitude
+			if not nearestDist or d < nearestDist then
+				nearest = p
+				nearestDist = d
+			end
+		end
+	end
+
+	return nearest
+end
+
+
+
+
+
+local function normalToNormalId(n)
+	local ax = math.abs(n.X)
+	local ay = math.abs(n.Y)
+	local az = math.abs(n.Z)
+
+	if ay > ax and ay > az then
+		return n.Y > 0 and Enum.NormalId.Top or Enum.NormalId.Bottom
+	elseif ax > ay and ax > az then
+		return n.X > 0 and Enum.NormalId.Right or Enum.NormalId.Left
+	else
+		return n.Z > 0 and Enum.NormalId.Back or Enum.NormalId.Front
+	end
+end
+
+
+local function sprayNearbyBricks(hitPos, hitNormal, col, currentText)
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { workspace.Terrain }
+
+	local parts = workspace:GetPartBoundsInBox(
+		CFrame.new(hitPos),
+		Vector3.new(1, 1, 1),
+		params
+	)
+
+	local normalId = normalToNormalId(hitNormal)
+	if not normalId then return end
+
+	for _, part in ipairs(parts) do
+		if part:IsA("BasePart") then
+			event:FireServer(
+				part,
+				normalId,
+				vector.create(hitPos.X, hitPos.Y, hitPos.Z),
+				"both \240\159\164\157",
+				col,
+				"spray",
+				currentText
+			)
+		end
+	end
+end
+
+
+
+local function getNearestHRP(position)
+	print("GetnearestHRP is running")
+	local nearestHRP = nil
+	local maxDistance = 20
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer then
+			local char = plr.Character
+			local humanoid = char:FindFirstChild("Humanoid")
+			if humanoid.Health <= 0 then return end
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local dist = (hrp.Position - position).Magnitude
+				if dist < maxDistance then
+					maxDistance = dist
+					nearestHRP = hrp
+
+				end
+			end
+		end
+	end
+	print(nearestHRP.Parent.Name, "is the nearestHRP")
+	print(maxDistance)
+	return nearestHRP
+end
+
+
+
+--[[
+task.spawn(function()
+	while task.wait(0.5) do
+		print("rainbow: ".. tostring(rainbow))
+		print("shovel: ".. tostring(shovel))
+		print("delete: ".. tostring(delete))
+		print("rainbowSky: ".. tostring(rainbowSky))
+		print("detailedPath: ".. tostring(detailedPath))
+		print("spraypaint: ".. tostring(spraypaint))
+		print("ka: ".. tostring(ka))
+		print("currentMaterial: ".. tostring(currentMaterial))
+		print("currentBlockPathType: ".. tostring(currentBlockPathType))
+		print("currentText: ".. tostring(currentText))
+		print("deleteevent: ".. tostring(deleteEvent))
+	end
+end)
+]]
+local deleteAuraBox
+local function runDeleteClickAura(hitPos)
+	if not DeleteClickAura or not hitPos then
+		if deleteAuraBox then
+			deleteAuraBox:Destroy()
+			deleteAuraBox = nil
+		end
+		return
+	end
+
+	if not deleteAuraBox then
+		deleteAuraBox = Instance.new("Part")
+		deleteAuraBox.Size = Vector3.new(20, 20, 20)
+		deleteAuraBox.Anchored = true
+		deleteAuraBox.CanCollide = false
+		deleteAuraBox.Transparency = 0.65
+		deleteAuraBox.Color = Color3.fromRGB(255, 0, 0)
+		deleteAuraBox.Material = Enum.Material.Neon
+		deleteAuraBox.Name = "DeleteAura"
+		deleteAuraBox.Parent = workspace
+	end
+
+	deleteAuraBox.CFrame = CFrame.new(hitPos)
+
+	local overlapParams = OverlapParams.new()
+	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+	overlapParams.FilterDescendantsInstances = {deleteAuraBox}
+
+	local parts = workspace:GetPartBoundsInBox(deleteAuraBox.CFrame, deleteAuraBox.Size, overlapParams)
+
+	for _, part in ipairs(parts) do
+		if part:IsA("BasePart") and part:IsDescendantOf(workspace.Bricks) then
+			deleteEvent:FireServer(part, part.Position)
+		end
+	end
+end
+
+-- SPRAYPAINT CLICK
+mouse.Button1Down:Connect(function()
+	if spraypaint then
+		local origin = cam.CFrame.Position
+		local hitPos = mouse.Hit.Position
+		local direction = (hitPos - origin) * 500
+
+		local result = workspace:Raycast(origin, direction, rayParams)
+		if not result then return end
+
+		sprayNearbyBricks(
+			result.Position,
+			result.Normal,
+			Color3.fromHSV(h, 1, 1),
+			currentText
+		)
+	end
+end)
+
+local DCAPos
+mouse.Button1Down:Connect(function()
+	if not DeleteClickAura then return end
+
+	local origin = cam.CFrame.Position
+	local hitPos = mouse.Hit.Position
+	local direction = (hitPos - origin) * 1000
+
+	local result = workspace:Raycast(origin, direction, rayParams)
+	if not result then return end
+
+	DCAPos = result.Position
+end)
+
+
+local function checkForTools()
+	shovel = LocalPlayer.Character:FindFirstChild("Shovel")
+	if not shovel then
+		shovel = LocalPlayer.Backpack:FindFirstChild("Shovel")
+	end
+	delete = LocalPlayer.Character:FindFirstChild("Delete")
+	if not delete then
+		delete = LocalPlayer.Backpack:FindFirstChild("Delete")
+	end
+	paint = LocalPlayer.Character:FindFirstChild("Paint")
+	if not paint then
+		paint = LocalPlayer.Backpack:FindFirstChild("Paint")
+	end
+end
+
+local function createToxicBlock(position)
+	local nearest = getNearestHRP(position)
+	if not nearest then return end
+
+	local buildTool = sneakyforceEquip("Build")
+	local paint = sneakyforceEquip("Paint")
+
+	local scr = buildTool and buildTool:FindFirstChild("Script")
+	if scr then
+		local event = scr:FindFirstChild("Event")
+		if event then
+			local args = {workspace.Terrain, Enum.NormalId.Top, nearest.Position, "detailed"}
+			event:FireServer(unpack(args))
+		end
+	end
+
+	local bricksFolder = workspace:WaitForChild("Bricks"):WaitForChild(plr.Name)
+	local newBlock
+	local conn
+	conn = bricksFolder.ChildAdded:Connect(function(child)
+		newBlock = child
+		conn:Disconnect()
+	end)
+	repeat task.wait() until newBlock
+
+	return newBlock
+end
+
+local unacnhorDebounce = false
+RunService.RenderStepped:Connect(function()
+	if  shovelEvent
+		or deleteEvent then
+		refreshTools()
+	end
+
+	h = h + 0.005
+	if h > 1 then h = 0 end
+	local col = Color3.fromHSV(h, 1, 1)
+	local origin = cam.CFrame.Position
+	local direction = Vector3.new()
+	runDeleteClickAura(DCAPos)
+	if detailedPath then
+		local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+
+		local pathType = currentBlockPathType
+		local isRainbowPath = pathType == "rainbow detailed" or pathType == "rainbow normal"
+
+		if isRainbowPath or currentMaterial == "anchor" then
+			forceEquip("Paint")
+			forceEquip("Build")
+			pathType = pathType:gsub("rainbow ","")
+		end
+		local args = {workspace.Terrain, Enum.NormalId.Top, hrp.Position, pathType}
+		local buildTool = plr.Character:FindFirstChild("Build")
+		if buildTool then
+			local scr = buildTool:FindFirstChild("Script")
+			if scr and scr:FindFirstChild("Event") then
+				scr.Event:FireServer(unpack(args))
+			end
+		end
+
+		if isRainbowPath and event or currentMaterial == "anchor" then
+			local nearest = getNearestBlock(hrp.Position)
+			if nearest then
+				if currentMaterial == "anchor" then
+					if nearest.Anchored == true then
+						event:FireServer(
+							nearest,
+							normalToFace(nearest.Position),
+							vector.create(nearest.Position.X, nearest.Position.Y, nearest.Position.Z),
+							"both \240\159\164\157",
+							col,
+							"anchor",
+							""
+						)
+					end
+				else
+					event:FireServer(
+						nearest,
+						normalToFace(nearest.Position),
+						vector.create(nearest.Position.X, nearest.Position.Y, nearest.Position.Z),
+						"both \240\159\164\157",
+						col,
+						currentMaterial,
+						""
+					)
+				end
+
+			end
+		end
+	end
+	if rainbow or rainbowSky or boxMode or selectedBlock or shovel or delete or spraypaint or ka then
+		local hitPos = mouse.Hit.Position
+		direction = hitPos - origin
+
+		if direction.Magnitude <= 0 then return end
+		direction = direction.Unit * 1000
+
+		local result = workspace:Raycast(origin, direction, rayParams)
+
+		if shovel then
+			if result then
+				local args = {
+					workspace:WaitForChild("Terrain"),
+					Enum.NormalId.Top,
+					result.Position,
+					"dig"
+				}
+				shovelEvent:FireServer(unpack(args))
+			end
+
+		elseif ka == true then
+			local character = plr.Character
+			if character and character:FindFirstChild("HumanoidRootPart") then
+				local block = createToxicBlock(character.HumanoidRootPart.Position)
+				event:FireServer(
+					block,
+					Enum.NormalId.Top,
+					Vector3.new(block.Position.X, block.Position.Y, block.Position.Z),
+					"both \240\159\164\157",
+					Color3.new(0, 0, 0),
+					"toxic",
+					""
+				)
+			end
+		elseif delete then
+			if result then
+				deleteEvent:FireServer(result.Instance, result.Position)
+			end
+
+		elseif rainbow then
+			event:FireServer(
+				result and result.Instance or workspace.Terrain,
+				normalToFace(result and result.Position or Vector3.new(0,1,0)),
+				vector.create(hitPos.X, hitPos.Y, hitPos.Z),
+				mode,
+				col,
+				currentMaterial,
+				""
+			)
+
+		elseif rainbowSky then
+			event:FireServer(
+				Enum.NormalId.Right,
+				vector.create(9468.4033203125, 3084.64111328125, 707.554443359375),
+				mode,
+				col,
+				"neon",
+				""
+			)
+
+		elseif selectedBlock then
+			event:FireServer(
+				block or (result and result.Instance) or workspace.Terrain,
+				normalToFace(
+					block and block.Position
+						or result and result.Position
+						or Vector3.new(0,1,0)
+				),
+				vector.create(hitPos.X, hitPos.Y, hitPos.Z),
+				mode,
+				col,
+				currentMaterial,
+				""
+			)
+		end
+	end
+end)         
