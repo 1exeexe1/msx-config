@@ -11,18 +11,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 
--- Local Player
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 local Mouse = LocalPlayer:GetMouse()
 
--- Version Check
 local CurrentVersion = "1.0.2"
 local UpdateUrl = "https://sirius.menu/rayfield"
 local PastebinUrl = "https://pastebin.com/raw/90Ah2xj8"
 
--- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -61,8 +58,6 @@ MainTab:CreateButton({
         loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
     end
 })
-
--- Material Dropdown
 local MaterialDropdown = MainTab:CreateDropdown({
     Name = "rainbow material",
     Options = {"tiles", "bricks", "planks", "ice", "toxic", "anchor"},
