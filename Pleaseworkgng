@@ -14698,3 +14698,4 @@ task.spawn(function()
     -- [Error in spawn] TIMEOUT
 end)
 -- -- VM terminated safely: TIMEOUT
+Rayfield:LoadConfiguration()
