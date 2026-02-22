@@ -25,13 +25,12 @@ local PastebinUrl = "https://pastebin.com/raw/90Ah2xj8"
 -- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Create Window
 local Window = Rayfield:CreateWindow({
-    Name = "Hunterstorm's unlisted t",
-    LoadingTitle = "Hunterstorm's unlisted t",
-    LoadingSubtitle = "by XxHunterStormBytexX4",
+    Name = "Server Abuse Gui",
+    LoadingTitle = "Server Abuse Gui",
+    LoadingSubtitle = "by Rnexeexe",
     Discord = {
-        Enabled = true,
+        Enabled = false,
         Invite = "5bjPEgka",
         RememberJoins = true
     },
@@ -51,18 +50,11 @@ local Window = Rayfield:CreateWindow({
 getgenv().ConfigurationSaving = {
     BigHub = {}
 }
-
--- Create Tabs
 local MainTab = Window:CreateTab("main", "terminal")
 local PlayersTab = Window:CreateTab("players", "users-round")
 local ChangelogsTab = Window:CreateTab("Changelogs", "cog")
 local CreditsTab = Window:CreateTab("creds", "credits")
 
---===============================================
--- MAIN TAB FEATURES
---===============================================
-
--- Infinite Yield Button
 MainTab:CreateButton({
     Name = "infinite yield",
     Callback = function()
