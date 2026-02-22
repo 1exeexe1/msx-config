@@ -1,0 +1,486 @@
+-- Deobfuscated IronBrew Script
+-- Original: Hunterstorm's unlisted t (Build Game Script)
+-- Version: 1.0.2
+-- Deobfuscated and reconstructed
+
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+
+-- Local Player
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Backpack = LocalPlayer:WaitForChild("Backpack")
+local Mouse = LocalPlayer:GetMouse()
+
+-- Version Check
+local CurrentVersion = "1.0.2"
+local UpdateUrl = "https://sirius.menu/rayfield"
+local PastebinUrl = "https://pastebin.com/raw/90Ah2xj8"
+
+-- Load Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- Create Window
+local Window = Rayfield:CreateWindow({
+    Name = "Hunterstorm's unlisted t",
+    LoadingTitle = "Hunterstorm's unlisted t",
+    LoadingSubtitle = "by XxHunterStormBytexX4",
+    Discord = {
+        Enabled = true,
+        Invite = "5bjPEgka",
+        RememberJoins = true
+    },
+    KeySystem = true,
+    KeySettings = {
+        Title = "key system",
+        Subtitle = "key system",
+        Note = "join our discord server ",
+        FileName = "Key",
+        SaveKey = true,
+        GrabKeyFromSite = true,
+        Key = {"key"}
+    }
+})
+
+-- Configuration
+getgenv().ConfigurationSaving = {
+    BigHub = {}
+}
+
+-- Create Tabs
+local MainTab = Window:CreateTab("main", "terminal")
+local PlayersTab = Window:CreateTab("players", "users-round")
+local ChangelogsTab = Window:CreateTab("Changelogs", "cog")
+local CreditsTab = Window:CreateTab("creds", "credits")
+
+--===============================================
+-- MAIN TAB FEATURES
+--===============================================
+
+-- Infinite Yield Button
+MainTab:CreateButton({
+    Name = "infinite yield",
+    Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+    end
+})
+
+-- Material Dropdown
+local MaterialDropdown = MainTab:CreateDropdown({
+    Name = "rainbow material",
+    Options = {"tiles", "bricks", "planks", "ice", "toxic", "anchor"},
+    CurrentOption = {"tiles"},
+    MultipleOptions = false,
+    Flag = "MaterialDropdown",
+    Callback = function(Options)
+        -- Material selection callback
+    end
+})
+
+-- Rainbow Paint Toggle
+local RainbowPaintToggle = MainTab:CreateToggle({
+    Name = "rainbow paint",
+    CurrentValue = false,
+    Flag = "RainbowPaint",
+    Callback = function(Value)
+        getgenv().RainbowPaint = Value
+    end
+})
+
+-- Rainbow Sky Toggle
+local RainbowSkyToggle = MainTab:CreateToggle({
+    Name = "rainbow sky",
+    CurrentValue = false,
+    Flag = "RainbowSky",
+    Callback = function(Value)
+        getgenv().RainbowSky = Value
+    end
+})
+
+-- Block Path Type Dropdown
+local Dropdown1 = MainTab:CreateDropdown({
+    Name = "block path type",
+    Options = {"detailed", "normal"},
+    CurrentOption = {"detailed"},
+    MultipleOptions = false,
+    Flag = "Dropdown1",
+    Callback = function(Options)
+        -- Block path type callback
+    end
+})
+
+-- Blocks Path Button
+MainTab:CreateButton({
+    Name = "blocks path",
+    Callback = function()
+        -- Blocks path functionality
+        local SelectedBlock = getgenv().SelectedBlock
+        if SelectedBlock then
+            -- Create path with selected block
+        end
+    end
+})
+
+-- Delete Aura Input
+local Input1 = MainTab:CreateInput({
+    Name = "spray paint",
+    PlaceholderText = "Enter value...",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        -- Spray paint functionality
+    end
+})
+
+-- Delete Aura Button
+MainTab:CreateButton({
+    Name = "Delete aura (CLICK AT POS)",
+    Callback = function()
+        getgenv().DeleteAura = true
+        -- Delete aura functionality
+        local DeleteTool = Backpack:FindFirstChild("Delete")
+        if DeleteTool then
+            local Script = DeleteTool:FindFirstChild("Script")
+            if Script then
+                local Event = Script:FindFirstChild("Event")
+                if Event then
+                    -- Fire delete event
+                end
+            end
+        end
+    end
+})
+
+-- Reset Paint Variable Button
+MainTab:CreateButton({
+    Name = "reset paint variable (ONLY IF BUGGED)",
+    Callback = function()
+        getgenv().RainbowPaint = false
+        -- Reset paint
+    end
+})
+
+-- Set RepStorage Brick Text Button
+MainTab:CreateButton({
+    Name = "set RepStorage brick text",
+    Callback = function()
+        local Brick = ReplicatedStorage:WaitForChild("Brick")
+        if Brick then
+            StarterGui:SetCore("SendNotification", {
+                Title = "RepStorage Brick Text Set",
+                Text = "for debugging",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- Toxic RepStorage Part Button
+MainTab:CreateButton({
+    Name = "toxic repstorage part",
+    Callback = function()
+        local Brick = ReplicatedStorage:WaitForChild("Brick")
+        if Brick then
+            -- Set to toxic
+        end
+    end
+})
+
+-- Unanchor RepStorage Part Button
+MainTab:CreateButton({
+    Name = "unanchor repstorage part",
+    Callback = function()
+        local Brick = ReplicatedStorage:WaitForChild("Brick")
+        if Brick then
+            Brick.Anchored = false
+        end
+    end
+})
+
+-- BKit Breaker Button
+MainTab:CreateButton({
+    Name = "BREAK BKIT (EQUIP DELETE AURA)",
+    Callback = function()
+        -- BKit breaker functionality
+        local DeleteTool = Backpack:FindFirstChild("Delete")
+        if DeleteTool then
+            local Parent = DeleteTool.Parent
+            -- Break bkit logic
+        end
+    end
+})
+
+-- Delcubes All Button
+MainTab:CreateButton({
+    Name = "Delcubes all",
+    Callback = function()
+        -- Delete all cubes
+        for _, Part in ipairs(Workspace.Bricks:GetDescendants()) do
+            if Part:IsA("BasePart") then
+                local DeleteTool = Backpack:FindFirstChild("Delete")
+                if DeleteTool then
+                    local Script = DeleteTool:FindFirstChild("Script")
+                    if Script then
+                        local Event = Script:FindFirstChild("Event")
+                        if Event then
+                            Event:FireServer(unpack({Part.Position, "both", Color3.new(1, 1, 1), "spray"}))
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- Remove BKit Sprays Button
+MainTab:CreateButton({
+    Name = "remove bkit sprays (Broken)",
+    Callback = function()
+        -- Remove bkit sprays functionality
+    end
+})
+
+--===============================================
+-- PLAYERS TAB FEATURES
+--===============================================
+
+-- Enlightened Users ESP Toggle
+local eue = PlayersTab:CreateToggle({
+    Name = "enlightened users ESP",
+    CurrentValue = false,
+    Flag = "eue",
+    Callback = function(Value)
+        getgenv().EnlightenedESP = Value
+        if Value then
+            -- Enable enlightened ESP
+            spawn(function()
+                while getgenv().EnlightenedESP do
+                    for _, Player in ipairs(Players:GetPlayers()) do
+                        if Player ~= LocalPlayer then
+                            local Character = Player.Character
+                            if Character then
+                                local Humanoid = Character:FindFirstChild("Humanoid")
+                                if Humanoid and Humanoid.Health > 0 then
+                                    -- ESP logic
+                                end
+                            end
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+-- Invisible Users ESP Toggle
+PlayersTab:CreateToggle({
+    Name = "invisible users ESP (best)",
+    CurrentValue = false,
+    Flag = "invis",
+    Callback = function(Value)
+        getgenv().InvisibleESP = Value
+        if Value then
+            spawn(function()
+                while getgenv().InvisibleESP do
+                    for _, Player in ipairs(Players:GetPlayers()) do
+                        if Player ~= LocalPlayer then
+                            local Character = Player.Character
+                            if Character then
+                                local Torso = Character:FindFirstChild("Torso")
+                                if Torso and Torso.Transparency > 0 then
+                                    -- Create ESP highlight
+                                    local Highlight = Instance.new("Highlight")
+                                    Highlight.Name = "invis"
+                                    Highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                                    Highlight.Parent = Character
+
+                                    -- Create text label
+                                    local TextLabel = Instance.new("TextLabel")
+                                    TextLabel.Text = "(INVIS USER: " .. Player.Name .. ")"
+                                    TextLabel.TextScaled = true
+                                    TextLabel.RichText = true
+                                    TextLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                                    TextLabel.FontFace = Font.new("rbxasset://fonts/families/Arial.json", Enum.FontWeight.Bold)
+                                    TextLabel.BackgroundTransparency = 1
+                                    TextLabel.Size = UDim2.new(1, 0, 1, 0)
+                                    TextLabel.Parent = Highlight
+                                end
+                            end
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        else
+            -- Remove ESP
+            for _, Player in ipairs(Players:GetPlayers()) do
+                if Player ~= LocalPlayer then
+                    local Character = Player.Character
+                    if Character then
+                        local Highlight = Character:FindFirstChild("invis")
+                        if Highlight then
+                            Highlight:Destroy()
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+--===============================================
+-- CHANGELOGS TAB
+--===============================================
+
+ChangelogsTab:CreateParagraph({
+    Title = "v1.0.3 (19/02/2026)",
+    Content = "- bkit breaker (fr)"
+})
+
+ChangelogsTab:CreateParagraph({
+    Title = "v1.0.2 (18/01/2026)",
+    Content = "- added more features"
+})
+
+ChangelogsTab:CreateParagraph({
+    Title = "v1.0.1 (15/01/2026)",
+    Content = "- Added initial features"
+})
+
+--===============================================
+-- CREDITS TAB
+--===============================================
+
+CreditsTab:CreateParagraph({
+    Title = "Credits",
+    Content = "me (HunterStorm) for creating this script"
+})
+
+CreditsTab:CreateParagraph({
+    Title = "Tips",
+    Content = "if u have any tips or suggestions, let me know!"
+})
+
+--===============================================
+-- UTILITY FUNCTIONS
+--===============================================
+
+-- Raycast Parameters
+local characterA = RaycastParams.new()
+characterA.FilterType = Enum.RaycastFilterType.Exclude
+characterA.FilterDescendantsInstances = {Character}
+
+-- Rainbow Paint Loop
+spawn(function()
+    while true do
+        if getgenv().RainbowPaint then
+            local PaintTool = Character:FindFirstChild("Paint") or Backpack:FindFirstChild("Paint")
+            if PaintTool then
+                local Script = PaintTool:FindFirstChild("Script")
+                if Script then
+                    local Event = Script:FindFirstChild("Event")
+                    if Event then
+                        -- Rainbow paint logic
+                        local hue = (tick() % 5) / 5
+                        local color = Color3.fromHSV(hue, 1, 1)
+                        -- Fire paint event
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- Delete Aura Loop
+spawn(function()
+    while true do
+        if getgenv().DeleteAura then
+            local DeleteTool = Backpack:FindFirstChild("Delete")
+            if DeleteTool then
+                local Script = DeleteTool:FindFirstChild("Script")
+                if Script then
+                    local Event = Script:FindFirstChild("Event")
+                    if Event then
+                        -- Get nearest HRP
+                        local NearestHRP = nil
+                        local MinDistance = math.huge
+
+                        for _, Player in ipairs(Players:GetPlayers()) do
+                            if Player ~= LocalPlayer then
+                                local Character = Player.Character
+                                if Character then
+                                    local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+                                    if HumanoidRootPart then
+                                        local Distance = (HumanoidRootPart.Position - Character.HumanoidRootPart.Position).Magnitude
+                                        if Distance < MinDistance then
+                                            MinDistance = Distance
+                                            NearestHRP = HumanoidRootPart
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        if NearestHRP then
+                            -- Create delete aura part
+                            local DeleteAuraPart = Instance.new("Part")
+                            DeleteAuraPart.Size = Vector3.new(10, 10, 10)
+                            DeleteAuraPart.Parent = Workspace
+                            DeleteAuraPart.Transparency = 0.5
+                            DeleteAuraPart.Color = Color3.fromRGB(255, 0, 0)
+                            DeleteAuraPart.Material = Enum.Material.Neon
+                            DeleteAuraPart.Name = "DeleteAura"
+                            DeleteAuraPart.Anchored = true
+                            DeleteAuraPart.CanCollide = false
+
+                            -- Get parts in bounds
+                            local OverlapParams = OverlapParams.new()
+                            OverlapParams.FilterType = Enum.RaycastFilterType.Exclude
+                            OverlapParams.FilterDescendantsInstances = {Workspace.Bricks}
+
+                            local Parts = Workspace:GetPartBoundsInBox(CFrame.new(NearestHRP.Position), Vector3.new(10, 10, 10), OverlapParams)
+
+                            for _, Part in ipairs(Parts) do
+                                if Part:IsA("BasePart") and not Part:IsDescendantOf(Workspace.Bricks) then
+                                    Event:FireServer(unpack({Part.Position, "both", Color3.fromHSV((tick() % 5) / 5, 1, 1), "spray"}))
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- Rainbow Sky Loop
+spawn(function()
+    while true do
+        if getgenv().RainbowSky then
+            -- Rainbow sky logic
+            local hue = (tick() % 10) / 10
+            -- Apply sky color
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- Block Selection
+getgenv().SelectedBlock = nil
+
+-- Notify user
+Rayfield:Notify({
+    Title = "Script Loaded",
+    Content = "Hunterstorm's unlisted t v" .. CurrentVersion .. " loaded successfully!",
+    Duration = 5,
+    Image = "check"
+})
+
+print("Script loaded successfully!")
