@@ -327,7 +327,7 @@ local function RepStorageText(txt, side)
 		side,
 		game.ReplicatedStorage:WaitForChild("Brick").Position,
 		"both \240\159\164\157",
-		Color3.new(0.8784313797950745, 0.8784313797950745, 0.43921568989753723),
+		Color3.new(0.4838728838727836, 0.678431378930745, 0.939215697953723),
 		"spray",
 		tostring(txt)
 	}
