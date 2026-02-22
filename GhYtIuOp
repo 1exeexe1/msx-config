@@ -471,3 +471,5 @@ Rayfield:Notify({
 })
 
 print("Script loaded successfully!")
+
+Rayfield:LoadConfiguration()
