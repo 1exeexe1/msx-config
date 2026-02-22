@@ -1,4 +1,4 @@
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Teleport = loadstring(game:HttpGet("https://pastebin.com/raw/90Ah2xj8"))()
 task.wait(0.5)
 local Notify = Rayfield:Notify({
@@ -255,7 +255,7 @@ local Button6 = Tab2:CreateButton({
 })
         task.wait(0.15)
         FindFirstChild6.Position = UDim2.new(0, 0, 0, 0)
-        local WaitForChild13 = game.ReplicatedStorage:WaitForChild("Brick")
+        local WaitForChild13 = game.ReplicatedStorage:WaitForChild("Brick)
         local WaitForChild14 = game.ReplicatedStorage:WaitForChild("Brick")
         local WaitForChild15 = game.Players.LocalPlayer.Character:WaitForChild("Paint")
         local Script12 = WaitForChild15:WaitForChild("Script")
