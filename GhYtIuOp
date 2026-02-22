@@ -52,7 +52,7 @@ local PlayersTab = Window:CreateTab("players", "users-round")
 local ChangelogsTab = Window:CreateTab("Changelogs", "cog")
 local CreditsTab = Window:CreateTab("creds", "credits")
 
-MainTab:CreateButton({
+local Button = MainTab:CreateButton({
     Name = "infinite yield",
     Callback = function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
