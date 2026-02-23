@@ -307,107 +307,142 @@ local Button = Tab:CreateButton({
 	end,
 })
 
-local Tab = Window:CreateTab("OP", "terminal")
+local Tab = Window:CreateTab("OP Paint", "paint-bucket")
 
 local currentText = "Hello, world!"
 local selectedColor = Color3.fromRGB(224, 224, 112)
-local selectedSide = "front"  -- default side
+local selectedSide = "front"
+local autoSpray = false
+
+local function safeSpray(txt, side, col)
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char then return end
+    
+    local paintTool = char:FindFirstChild("Paint")
+    if not paintTool then
+        Rayfield:Notify({Title = "Error", Content = "Equip Paint tool first!", Duration = 4})
+        return
+    end
+    
+    local scriptInTool = paintTool:FindFirstChild("Script")
+    if not scriptInTool then return end
+    
+    local event = scriptInTool:FindFirstChild("Event")
+    if not event or not event:IsA("RemoteEvent") then
+        Rayfield:Notify({Title = "Error", Content = "Paint Event not found!", Duration = 4})
+        return
+    end
+    
+    local brickRemote = game.ReplicatedStorage:FindFirstChild("Brick")
+    if not brickRemote then
+        Rayfield:Notify({Title = "Error", Content = "ReplicatedStorage.Brick missing!", Duration = 4})
+        return
+    end
+    
+    local args = {
+        brickRemote,
+        side,
+        brickRemote.Position,
+        "both \240\159\164\157",
+        col,
+        "spray",
+        tostring(txt)
+    }
+    
+    event:FireServer(unpack(args))
+    
+    Rayfield:Notify({
+        Title = "Sprayed!",
+        Content = string.format("'%s' on %s", txt, side),
+        Duration = 3,
+    })
+end
 
 local Input = Tab:CreateInput({
-    Name = "Text to spray on block",
+    Name = "Text to Spray",
     CurrentValue = currentText,
-    PlaceholderText = "Hello, world!",
+    PlaceholderText = "Type here...",
     RemoveTextAfterFocusLost = false,
     Flag = "TextInput",
     Callback = function(Text)
         currentText = Text
+        if autoSpray and Text ~= "" then
+            safeSpray(Text, selectedSide, selectedColor)
+        end
     end,
 })
 
-local ColorPicker1 = Tab:CreateColorpicker({
-    Name = "Main Text Color",
+local ColorPicker = Tab:CreateColorpicker({
+    Name = "Text Color",
     Color = selectedColor,
-    Flag = "Color1",
+    Flag = "MainColor",
     Callback = function(Value)
         selectedColor = Value
+        if autoSpray and currentText ~= "" then
+            safeSpray(currentText, selectedSide, Value)
+        end
     end
 })
 
-local ColorPicker2 = Tab:CreateColorpicker({
-    Name = "Color Preset 2 (e.g. Red)",
-    Color = Color3.fromRGB(255, 80, 80),
-    Flag = "Color2",
-    Callback = function(Value)
-    end
-})
-
-local ColorPicker3 = Tab:CreateColorpicker({
-    Name = "Color Preset 3 (e.g. Cyan)",
-    Color = Color3.fromRGB(0, 220, 255),
-    Flag = "Color3",
-    Callback = function(Value)
-    end
-})
 local SideDropdown = Tab:CreateDropdown({
-    Name = "Target Face/Side",
+    Name = "Spray Side",
     Options = {"front", "back", "left", "right", "top", "bottom", "both"},
-    CurrentOption = "front",
-    Flag = "SideChoice",
+    CurrentOption = {"front"},
+    MultipleOptions = false,
+    Flag = "Side",
     Callback = function(Option)
-        selectedSide = Option
+        selectedSide = type(Option) == "table" and Option[1] or Option
+        if autoSpray and currentText ~= "" then
+            safeSpray(currentText, selectedSide, selectedColor)
+        end
+    end,
+})
+
+local AutoToggle = Tab:CreateToggle({
+    Name = "Auto-Spray Changes",
+    CurrentValue = autoSpray,
+    Flag = "AutoSpray",
+    Callback = function(Value)
+        autoSpray = Value
+        if Value and currentText ~= "" then
+            safeSpray(currentText, selectedSide, selectedColor)
+        end
     end,
 })
 
 local SprayButton = Tab:CreateButton({
-    Name = "Spray Text Now!",
+    Name = "Spray Now",
     Callback = function()
-        if currentText == "" then
-            Rayfield:Notify({
-                Title = "Error",
-                Content = "Enter some text first!",
-                Duration = 3,
-                Image = 4483362458,
-            })
+        if currentText == "" or currentText:match("^%s*$") then
+            Rayfield:Notify({Title = "Error", Content = "Enter text!", Duration = 3})
             return
         end
-
-        local args = {
-            game.ReplicatedStorage:WaitForChild("Brick"),
-            selectedSide,                                 -- now dynamic!
-            game.ReplicatedStorage:WaitForChild("Brick").Position,
-            "both \240\159\164\157",                      -- emoji / mode? keep as-is
-            selectedColor,                                -- now from picker!
-            "spray",
-            tostring(currentText)
-        }
-
-        game:GetService("Players").LocalPlayer.Character
-            :WaitForChild("Paint")
-            :WaitForChild("Script")
-            :WaitForChild("Event")
-            :FireServer(unpack(args))
-
-        Rayfield:Notify({
-            Title = "Sprayed!",
-            Content = "Text '" .. currentText .. "' sprayed in color on " .. selectedSide,
-            Duration = 4,
-        })
+        safeSpray(currentText, selectedSide, selectedColor)
     end,
 })
 
 Tab:CreateButton({
-    Name = "Use Red Preset",
+    Name = "Red",
     Callback = function()
-        selectedColor = Color3.fromRGB(255, 80, 80)
-        ColorPicker1:Set(selectedColor)
+        selectedColor = Color3.fromRGB(255, 60, 60)
+        ColorPicker:Set(selectedColor)
     end,
 })
 
 Tab:CreateButton({
-    Name = "Use Cyan Preset",
+    Name = "Blue",
     Callback = function()
-        selectedColor = Color3.fromRGB(0, 220, 255)
-        ColorPicker1:Set(selectedColor)
+        selectedColor = Color3.fromRGB(60, 150, 255)
+        ColorPicker:Set(selectedColor)
+    end,
+})
+
+Tab:CreateButton({
+    Name = "Green",
+    Callback = function()
+        selectedColor = Color3.fromRGB(60, 255, 100)
+        ColorPicker:Set(selectedColor)
     end,
 })
 local Button = Tab:CreateButton({
