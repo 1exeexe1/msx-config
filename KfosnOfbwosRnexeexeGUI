@@ -53,15 +53,35 @@ rayParams.FilterDescendantsInstances = {player.Character or player.CharacterAdde
 
 -- Helper functions ------------------------------------------------
 
-local function normalToFace(n)
-    local a = math.abs
-    if a(n.X) > a(n.Y) and a(n.X) > a(n.Z) then
-        return n.X > 0 and Enum.NormalId.Right or Enum.NormalId.Left
-    elseif a(n.Y) > a(n.Z) then
+local function normalToNormalId(n)
+    local ax = math.abs(n.X)
+    local ay = math.abs(n.Y)
+    local az = math.abs(n.Z)
+    if ay > ax and ay > az then
         return n.Y > 0 and Enum.NormalId.Top or Enum.NormalId.Bottom
+    elseif ax > ay and ax > az then
+        return n.X > 0 and Enum.NormalId.Right or Enum.NormalId.Left
     else
         return n.Z > 0 and Enum.NormalId.Back or Enum.NormalId.Front
     end
+end
+
+local function getNearestHRP(position)
+    local nearestHRP = nil
+    local maxDist = 20
+    for _, p in Players:GetPlayers() do
+        if p ~= player and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local dist = (hrp.Position - position).Magnitude
+                if dist < maxDist then
+                    maxDist = dist
+                    nearestHRP = hrp
+                end
+            end
+        end
+    end
+    return nearestHRP
 end
 
 local function getPaintEvent()
@@ -352,49 +372,184 @@ end)
 mouse.Button1Down:Connect(function()
     if waitingForClick then
         if mouse.Target then
-            block = mouse.Target
-            print("Selected: " .. block:GetFullName())
+            selectedBlockPart = mouse.Target
+            print("Selected block: " .. selectedBlockPart:GetFullName())
+            StarterGui:SetCore("SendNotification", {
+                Title = "Block Selected",
+                Text = selectedBlockPart.Name,
+                Duration = 4
+            })
         end
         waitingForClick = false
+        return
     end
 
-    if spraypaint then
-        local origin = cam.CFrame.Position
-        local dir = (mouse.Hit.Position - origin).Unit * 1000
-        local res = Workspace:Raycast(origin, dir, rayParams)
-        if res then
-            -- spray logic here (add your sprayNearbyBricks if needed)
+    -- Rainbow Paint (click to paint)
+    if rainbow and paintEvent then
+        local target = mouse.Target
+        if target and target:IsA("BasePart") then
+            local face = normalToFace((mouse.Hit.Position - target.Position).Unit)
+            paintEvent:FireServer(
+                target,
+                face,
+                mouse.Hit.Position,
+                mode,
+                Color3.fromHSV(h, 1, 1),
+                currentMaterial,
+                ""
+            )
         end
     end
 
+    -- Delete (single click delete)
+    if deleteFlag and deleteEvent then
+        local target = mouse.Target
+        if target then
+            deleteEvent:FireServer(target, mouse.Hit.Position)
+        end
+    end
+
+    -- Shovel (dig on click)
+    if shovelFlag and shovelEvent then
+        local hit = mouse.Hit
+        shovelEvent:FireServer(
+            workspace.Terrain,
+            Enum.NormalId.Top,
+            hit.Position,
+            "dig"
+        )
+    end
+
+    -- Spray Paint (spray text on click)
+    if spraypaint and paintEvent then
+        local origin = cam.CFrame.Position
+        local direction = (mouse.Hit.Position - origin).Unit * 500
+        local result = workspace:Raycast(origin, direction, rayParams)
+        if result then
+            local normalId = normalToNormalId(result.Normal)
+            paintEvent:FireServer(
+                result.Instance,
+                normalId,
+                result.Position,
+                mode,
+                Color3.fromHSV(h, 1, 1),
+                "spray",
+                currentText
+            )
+        end
+    end
+
+    -- Delete Aura position capture
     if DeleteClickAura then
         local origin = cam.CFrame.Position
-        local dir = (mouse.Hit.Position - origin).Unit * 1000
-        local res = Workspace:Raycast(origin, dir, rayParams)
-        if res then DCAPos = res.Position end
+        local direction = (mouse.Hit.Position - origin).Unit * 1000
+        local result = workspace:Raycast(origin, direction, rayParams)
+        if result then
+            DCAPos = result.Position
+        end
     end
 end)
+-- ... all your UI code, bubble, frame, tabs, switchTab, mouse.Button1Down ...
 
-RunService.RenderStepped:Connect(function()
-    h = (h + 0.008) % 1
+-- The continuous loop - put this at the END of the script
+RunService.RenderStepped:Connect(function(dt)
+    h = (h + dt * 3) % 1
+    local col = Color3.fromHSV(h, 1, 1)
+
     refreshTools()
 
-    if DeleteClickAura and DCAPos then
-        -- simple delete aura visual + logic (expand as needed)
+    if rainbowSky and paintEvent then
+        paintEvent:FireServer(
+            Enum.NormalId.Right,
+            Vector3.new(9468.4033203125, 3084.64111328125, 707.554443359375),
+            mode,
+            col,
+            "neon",
+            ""
+        )
+    end
+
+    if detailedPath then
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local pathType = currentBlockPathType
+            local isRainbow = pathType:find("rainbow") ~= nil
+            if isRainbow then pathType = pathType:gsub("rainbow ", "") end
+
+            local build = char:FindFirstChild("Build") or player.Backpack:FindFirstChild("Build")
+            if build then
+                local bscr = build:FindFirstChild("Script")
+                if bscr and bscr:FindFirstChild("Event") then
+                    bscr.Event:FireServer(workspace.Terrain, Enum.NormalId.Top, hrp.Position, pathType)
+                end
+            end
+
+            if isRainbow and paintEvent then
+                local nearest = getNearestBlock(hrp.Position)
+                if nearest then
+                    paintEvent:FireServer(
+                        nearest,
+                        normalToFace(hrp.Position - nearest.Position),
+                        hrp.Position,
+                        mode,
+                        col,
+                        currentMaterial,
+                        ""
+                    )
+                end
+            end
+        end
+    end
+
+    if ka and paintEvent then
+        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local nearest = getNearestHRP(hrp.Position)
+            if nearest then
+                paintEvent:FireServer(
+                    workspace.Terrain,
+                    Enum.NormalId.Top,
+                    nearest.Position,
+                    mode,
+                    Color3.new(0,0,0),
+                    "toxic",
+                    ""
+                )
+            end
+        end
+    end
+
+    if DeleteClickAura and DCAPos and deleteEvent then
         if not deleteAuraBox then
             deleteAuraBox = Instance.new("Part")
+            deleteAuraBox.Name = "DeleteAuraBox"
             deleteAuraBox.Size = Vector3.new(20,20,20)
-            deleteAuraBox.Transparency = 0.7
-            deleteAuraBox.Color = Color3.new(1,0,0)
             deleteAuraBox.Anchored = true
             deleteAuraBox.CanCollide = false
-            deleteAuraBox.Parent = Workspace
+            deleteAuraBox.Transparency = 0.6
+            deleteAuraBox.Color = Color3.fromRGB(255,80,80)
+            deleteAuraBox.Material = Enum.Material.Neon
+            deleteAuraBox.Parent = workspace
         end
-        deleteAuraBox.CFrame = CFrame.new(DCAPos)
+        deleteAuraBox.Position = DCAPos
+
+        local overlap = OverlapParams.new()
+        overlap.FilterType = Enum.RaycastFilterType.Exclude
+        overlap.FilterDescendantsInstances = {deleteAuraBox}
+
+        local parts = workspace:GetPartBoundsInBox(CFrame.new(DCAPos), Vector3.new(20,20,20), overlap)
+        for _, part in parts do
+            if part:IsA("BasePart") and part:IsDescendantOf(workspace:FindFirstChild("Bricks") or workspace) then
+                deleteEvent:FireServer(part, part.Position)
+            end
+        end
     elseif deleteAuraBox then
         deleteAuraBox:Destroy()
         deleteAuraBox = nil
     end
 end)
+
+print("RenderStepped loop added - continuous effects should work now")
 
 print("Custom UI loaded")
