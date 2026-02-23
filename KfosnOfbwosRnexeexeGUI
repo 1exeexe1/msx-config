@@ -127,6 +127,15 @@ mainFrame.BorderSizePixel = 2
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
+bubble.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+    print("Bubble clicked → Main frame visible = " .. tostring(mainFrame.Visible))
+end)
+
+-- Force visible once on load so you can test
+mainFrame.Visible = true
+print("UI loaded - bubble should toggle visibility now")
+
 -- Title bar + drag + close (same as before, shortened for brevity)
 
 -- (omitting title bar / drag / close code for space — copy from previous version or keep yours)
