@@ -1,8 +1,3 @@
-local Junkie = loadstring(game:HttpGet("https://jnkie.com/sdk/library.lua"))()
-Junkie.service = "TimeStand ( OP )"
-Junkie.identifier = "1012798"
-Junkie.provider = "OP TimeStand"
-
 local result = (function()
     getgenv().UI_CLOSED = false
     local Players = game:GetService("Players")
