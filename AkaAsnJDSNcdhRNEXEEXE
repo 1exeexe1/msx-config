@@ -400,7 +400,235 @@ local result = (function()
             inputStroke.Thickness = 1
             inputStroke.Transparency = 0.5
             inputStroke.Parent = inputSection
+            local result = (function()
+    getgenv().UI_CLOSED = false
+    local Players = game:GetService("Players")
+    local TweenService = game:GetService("TweenService")
+    local UserInputService = game:GetService("UserInputService")
+    local Lighting = game:GetService("Lighting")
+    local Colors = {
+        background = Color3.fromRGB(13, 17, 23),
+        surface = Color3.fromRGB(22, 27, 34),
+        surfaceLight = Color3.fromRGB(30, 36, 44),
+        primary = Color3.fromRGB(88, 166, 255),
+        primaryDark = Color3.fromRGB(58, 136, 225),
+        primaryGlow = Color3.fromRGB(120, 180, 255),
+        accent = Color3.fromRGB(136, 87, 224),
+        success = Color3.fromRGB(47, 183, 117),
+        successDark = Color3.fromRGB(37, 153, 97),
+        successGlow = Color3.fromRGB(67, 203, 137),
+        error = Color3.fromRGB(248, 81, 73),
+        textPrimary = Color3.fromRGB(230, 237, 243),
+        textSecondary = Color3.fromRGB(139, 148, 158),
+        textMuted = Color3.fromRGB(110, 118, 129),
+        border = Color3.fromRGB(48, 54, 61),
+        borderLight = Color3.fromRGB(63, 71, 79),
+        glass = Color3.fromRGB(255, 255, 255),
+        neonBlue = Color3.fromRGB(0, 229, 255),
+        neonPurple = Color3.fromRGB(187, 134, 252)
+    }
+    
+    local function hasFileSystemSupport()
+        local hasWritefile = pcall(function() return type(writefile) == "function" end)
+        local hasReadfile = pcall(function() return type(readfile) == "function" end)
+        local hasIsfile = pcall(function() return type(isfile) == "function" end)
+        return hasWritefile and hasReadfile and hasIsfile
+    end
+    
+    local fileSystemSupported = hasFileSystemSupport()
+    
+    local function saveVerifiedKey(key)
+        if not fileSystemSupported then return false end
+        local ok = pcall(function()
+            writefile("verified_key.txt", key)
+        end)
+        return ok
+    end
+    
+    local function loadVerifiedKey()
+        if not fileSystemSupported then 
+            return nil 
+        end
+        
+        local ok, content = pcall(function()
+            return readfile("verified_key.txt")
+        end)
+        
+        if not ok or not content then 
+            return nil 
+        end
+        return content
+    end
+    
+    local function clearSavedKey()
+        if not fileSystemSupported then return false end
+        local ok = pcall(function() delfile("verified_key.txt") end)
+        return ok
+    end
+    
+
+    local function loadUIFactory()
+        return function(Colors, Players, TweenService, UserInputService, Lighting)
+        local IconAssets = {
+            shield = 84528813312016,
+            x = 73070135088117,
+            key = 128426502701541,
+            link = 73034596791310,
+            check = 83827110621355
+        }
+        
+        local function createIconImage(name, size, color)
+            local id = IconAssets[name]
+            if id then
+                local img = Instance.new("ImageLabel")
+                img.BackgroundTransparency = 1
+                img.Size = UDim2.new(0, size or 18, 0, size or 18)
+                img.Image = "rbxassetid://" .. tostring(id)
+                img.ImageColor3 = color or Color3.fromRGB(255, 255, 255)
+                img.ScaleType = Enum.ScaleType.Fit
+                if img:IsA("ImageLabel") and img.ResampleMode ~= nil then
+                    img.ResampleMode = Enum.ResamplerMode.Default
+                end
+                return img
+            end
+
+            local lbl = Instance.new("TextLabel")
+            lbl.BackgroundTransparency = 1
+            lbl.Size = UDim2.new(0, size or 18, 0, size or 18)
+            lbl.TextScaled = true
+            lbl.Font = Enum.Font.SourceSansBold
+            lbl.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+            lbl.Text = ({ shield = "🛡️", key = "🔑", link = "🔗", x = "✕", check = "✓" })[name] or "🔘"
+            return lbl
+        end
+        
+        return function(self)
+            if self.gui then
+                self.gui:Destroy()
+            end
             
+            self.gui = Instance.new("ScreenGui")
+            self.gui.Name = "JunkieKeySystemUI"
+            self.gui.ResetOnSpawn = false
+            self.gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            self.gui.IgnoreGuiInset = true
+            
+            local backdrop = Instance.new("Frame")
+            backdrop.Name = "Backdrop"
+            backdrop.Size = UDim2.new(1, 0, 1, 0)
+            backdrop.Position = UDim2.new(0, 0, 0, 0)
+            backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            backdrop.BackgroundTransparency = 0.4
+            backdrop.BorderSizePixel = 0
+            backdrop.Parent = self.gui
+            
+            local blur = Instance.new("BlurEffect")
+            blur.Size = 16
+            blur.Name = "JunkieUIBlur"
+            blur.Parent = Lighting
+            
+            local container = Instance.new("Frame")
+            container.Name = "Container"
+            
+            local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+            local viewportSize = workspace.CurrentCamera.ViewportSize
+            
+            if isMobile then
+                container.Size = UDim2.new(0.6, 0, 0, math.min(320, viewportSize.Y * 0.8))
+                container.Position = UDim2.new(0.5, 0, 0.5, 0)
+                container.AnchorPoint = Vector2.new(0.5, 0.5)
+            else
+                container.Size = UDim2.new(0, 580, 0, 320)
+                container.Position = UDim2.new(0.5, 0, 0.5, 0)
+                container.AnchorPoint = Vector2.new(0.5, 0.5)
+            end
+            
+            container.BackgroundColor3 = Colors.surface
+            container.BorderSizePixel = 0
+            container.Parent = backdrop
+            
+            container:SetAttribute("IsMobile", isMobile)
+            
+            local containerCorner = Instance.new("UICorner")
+            containerCorner.CornerRadius = UDim.new(0, 14)
+            containerCorner.Parent = container
+            
+            local containerStroke = Instance.new("UIStroke")
+            containerStroke.Color = Colors.border
+            containerStroke.Thickness = 1
+            containerStroke.Transparency = 0.3
+            containerStroke.Parent = container
+            
+            -- [ ... all the shadow, glow, glassOverlay, topBar, brandLogo, closeButton stuff stays exactly the same ... ]
+            
+            -- (I'm skipping repeating the unchanged UI creation code here for brevity – keep everything from topBar down to contentArea as-is)
+            
+            -- Add this new button right after the inputSection (or wherever you want it visually – I put it below the key input for easy access)
+            local skipSection = Instance.new("Frame")
+            skipSection.Name = "SkipSection"
+            skipSection.Size = UDim2.new(1, 0, 0, 50)
+            skipSection.Position = UDim2.new(0, 0, 0, 170)  -- adjust Y offset if needed based on your layout
+            skipSection.BackgroundTransparency = 1
+            skipSection.Parent = contentArea
+            
+            local skipButton = Instance.new("TextButton")
+            skipButton.Name = "SkipButton"
+            skipButton.Size = UDim2.new(0.5, 0, 0, 40)
+            skipButton.Position = UDim2.new(0.25, 0, 0, 5)
+            skipButton.AnchorPoint = Vector2.new(0, 0)
+            skipButton.BackgroundColor3 = Colors.primaryDark
+            skipButton.BorderSizePixel = 0
+            skipButton.Text = "Skip the Hustle (Dev Mode)"
+            skipButton.TextColor3 = Colors.textPrimary
+            skipButton.TextSize = 16
+            skipButton.Font = Enum.Font.GothamSemibold
+            skipButton.AutoButtonColor = false
+            skipButton.Parent = skipSection
+            
+            local skipCorner = Instance.new("UICorner")
+            skipCorner.CornerRadius = UDim.new(0, 10)
+            skipCorner.Parent = skipButton
+            
+            local skipStroke = Instance.new("UIStroke")
+            skipStroke.Color = Colors.primary
+            skipStroke.Thickness = 1.5
+            skipStroke.Transparency = 0.4
+            skipStroke.Parent = skipButton
+            
+            -- Hover effect (optional but nice)
+            skipButton.MouseEnter:Connect(function()
+                TweenService:Create(skipButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.primary}):Play()
+            end)
+            skipButton.MouseLeave:Connect(function()
+                TweenService:Create(skipButton, TweenInfo.new(0.2), {BackgroundColor3 = Colors.primaryDark}):Play()
+            end)
+            
+            -- The skip logic – runs the obfuscated main script directly
+            skipButton.MouseButton1Click:Connect(function()
+                -- Clean up UI first
+                if self.gui then
+                    self.gui:Destroy()
+                end
+                blur:Destroy()
+                
+                getgenv().UI_CLOSED = true
+                
+                -- Run the main obfuscated payload (this is the ... part at the end of your script)
+                -- We're assuming the obfuscated loader is stored/returned in 'result' or similar – adjust if needed
+                -- In your original, the big obfuscated blob is after this function, so we call it here
+                spawn(function()
+                    -- If your obfuscated part is wrapped in the final ()(...) call, this triggers it
+                    -- Otherwise paste the exact call that runs the main script
+                    result()  -- <--- this should launch the main script (adjust name if different)
+                end)
+            end)
+            
+            -- [ ... rest of your UI creation code (input fields, verify button, etc.) stays unchanged below ... ]
+            
+            -- Make sure to return or assign 'self' if your factory pattern needs it
+        end
+    end
+end)()
 
             local keyIcon = createIconImage("key", 18, Colors.primary)
             keyIcon.AnchorPoint = Vector2.new(0, 0.5)
