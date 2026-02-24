@@ -4,7 +4,7 @@ Junkie.identifier = "1012798"
 Junkie.provider = "OP TimeStand"
 
 local result = (function()
-    getgenv().UI_CLOSED = false
+    getgenv().UI_CLOSED = true
     local Players = game:GetService("Players")
     local TweenService = game:GetService("TweenService")
     local UserInputService = game:GetService("UserInputService")
@@ -62,13 +62,6 @@ local result = (function()
         end
         return content
     end
-    
-    local function clearSavedKey()
-        if not fileSystemSupported then return false end
-        local ok = pcall(function() delfile("verified_key.txt") end)
-        return ok
-    end
-    
 
     local function loadUIFactory()
         return function(Colors, Players, TweenService, UserInputService, Lighting)
