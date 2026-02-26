@@ -1,6 +1,6 @@
 -- Inside your startup bypass section, after setting SCRIPT_KEY
-getgenv().SCRIPT_KEY = usedKey
-getgenv().Key = usedKey
+getgenv().SCRIPT_KEY = "KEYLESS"
+getgenv().Key = KEYLESS
 getgenv().HWID = "00000000-0000-0000-0000-000000000000"  -- fake UUID-style HWID
 getgenv()._HWID = getgenv().HWID
 -- Then proceed to close UI and return
