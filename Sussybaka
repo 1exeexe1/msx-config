@@ -1,0 +1,30 @@
+-- USE THIS LIBRARY ONLY IN COMBINATION WITH AN OFFICIAL LOADSTRING AFTERWARDS
+-- THIS LIBRARY IS NOT SECURED
+
+local HttpService = game:GetService("HttpService")
+local httpRequest = (syn and syn.request) or request or http_request
+
+local Junkie = {}
+Junkie.service = nil
+Junkie.identifier = nil
+Junkie.base_url = "https://api.jnkie.com/api/v1/whitelist"
+Junkie.script_id = nil
+Junkie.provider = nil
+
+function Junkie.check_key(key)
+    -- Bypass: Always return valid without HTTP request
+    return {valid = true, error = nil}
+end
+
+function Junkie.get_key_link(provider)
+    -- Bypass: Return dummy link without HTTP request
+    return "https://example.com/dummy-key-link", nil
+end
+
+function Junkie.load_script()
+    if not Junkie.script_id then error("script_id not set") end
+    loadstring(game:HttpGet("https://api.jnkie.com/api/v1/luascripts/public/" .. tostring(Junkie.script_id) .. "/download"))()
+    return
+end
+
+return Junkie
