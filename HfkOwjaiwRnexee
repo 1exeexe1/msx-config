@@ -1519,7 +1519,7 @@ local result = (function()
         keyToCheck = getgenv().SCRIPT_KEY
     end
     
-    local result = rnexe
+    local result = Junkie.check_key(keyToCheck)
     if result and result.valid then
         if result.message == "KEYLESS" then
             if ui.showSuccess then
@@ -1539,7 +1539,7 @@ local result = (function()
                 local successMsg = savedKey and "Saved Key Verified ✓" or "Key Verified ✓"
                 ui:showSuccess(successMsg)
             end
-            getgenv().SCRIPT_KEY = rnexe
+            getgenv().SCRIPT_KEY = keyToCheck
             if ui.close then ui:close() end
             return
         end
