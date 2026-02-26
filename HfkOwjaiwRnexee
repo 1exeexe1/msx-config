@@ -1,3 +1,9 @@
+-- Inside your startup bypass section, after setting SCRIPT_KEY
+getgenv().SCRIPT_KEY = usedKey
+getgenv().Key = usedKey
+getgenv().HWID = "00000000-0000-0000-0000-000000000000"  -- fake UUID-style HWID
+getgenv()._HWID = getgenv().HWID
+-- Then proceed to close UI and return
 local Junkie = loadstring(game:HttpGet("https://raw.githubusercontent.com/1exeexe1/msx-config/refs/heads/main/Sussybaka"))()
 Junkie.service = "TimeStand ( OP )"
 Junkie.identifier = "1012798"
