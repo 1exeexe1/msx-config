@@ -1463,101 +1463,73 @@ local result = (function()
         end
     end
     
-    function UI:handleVerifyKey()
-        local key = self.elements.keyInput.Text:gsub("%s+", "")
-        
-        if key == "" then
-            self:updateStatus("Please enter a key", Colors.error, 3)
-            self:shakeInput()
-            return
-        end
-        
-        if self.setButtonLoading then
-            self:setButtonLoading(self.elements.verifyButton, "Verifying", true)
-        end
-        self:updateStatus("Verifying...", Colors.primary, 0)
-        
-        if self.elements.keyInput.Interactable ~= nil then
-            self.elements.keyInput.Interactable = false
-        end
-        
-        local result = Junkie.check_key(key)
-        
-        if result and result.valid then
-            saveVerifiedKey(key)
-            self:updateStatus("Key verified!", Colors.success, 0)
-            if self.animateSuccess then self:animateSuccess() end
-            
-            task.wait(1.5)
-            getgenv().SCRIPT_KEY = key
-            self:close()
-            return 
-        else
-            self:updateStatus("Invalid key", Colors.error, 3)
-            if self.shakeInput then self:shakeInput() end
-            
-            if self.setButtonLoading then
-                self:setButtonLoading(self.elements.verifyButton, "Verify Key", false)
-            end
-            if self.elements.keyInput.Interactable ~= nil then
-                self.elements.keyInput.Interactable = true
-            end
-        
-        end
-    end
-
-    local ui = UI.new(options)
-    ui:createUI()
-
-    if ui.setLoadingState then
-        ui:setLoadingState(true, "Checking verification...")
-    end
-
-    local savedKey = loadVerifiedKey()
-    local keyToCheck = savedKey
-    if not keyToCheck then
-        keyToCheck = getgenv().SCRIPT_KEY
+function UI:handleVerifyKey()
+    local key = self.elements.keyInput.Text:gsub("%s+", "")
+    
+    if key == "" then
+        self:updateStatus("Please enter a key", Colors.error, 3)
+        self:shakeInput()
+        return
     end
     
-    local result = Junkie.check_key(keyToCheck)
-    if result and result.valid then
-        if result.message == "KEYLESS" then
-            if ui.showSuccess then
-                ui:showSuccess("Keyless Mode ✓")
-            end
-            getgenv().SCRIPT_KEY = "KEYLESS"
-            if ui.close then ui:close() end
-            return
-        end
-        
-        if result.message == "KEY_VALID" then
-            if not savedKey and keyToCheck then
-                saveVerifiedKey(keyToCheck)
-            end
-            
-            if ui.showSuccess then
-                local successMsg = savedKey and "Saved Key Verified ✓" or "Key Verified ✓"
-                ui:showSuccess(successMsg)
-            end
-            getgenv().SCRIPT_KEY = keyToCheck
-            if ui.close then ui:close() end
-            return
-        end
-        
-        if savedKey and not result.key_valid then
-            clearSavedKey()
-        end
-        
+    if self.setButtonLoading then
+        self:setButtonLoading(self.elements.verifyButton, "Verifying", true)
+    end
+    self:updateStatus("Verifying...", Colors.primary, 0)
+    
+    if self.elements.keyInput.Interactable ~= nil then
+        self.elements.keyInput.Interactable = false
     end
     
-    if ui.setLoadingState then
-        ui:setLoadingState(false)
-    end
+    -- Bypass: force success regardless of real check result
+    -- local result = Junkie.check_key(key)   -- you can keep this line commented or remove it
+    
+    saveVerifiedKey(key)
+    self:updateStatus("Key verified! (bypassed)", Colors.success, 0)
+    if self.animateSuccess then self:animateSuccess() end
+    
+    task.wait(1.5)
+    getgenv().SCRIPT_KEY = key or "BYPASS"
+    self:close()
+    return
+end
 
-    while not getgenv().UI_CLOSED do
-        task.wait(0.1)
-    end
-    return getgenv().SCRIPT_KEY
+-- ... (rest of UI.new / createUI unchanged)
+
+local ui = UI.new(options)
+ui:createUI()
+
+if ui.setLoadingState then
+    ui:setLoadingState(true, "Checking verification...")
+end
+
+-- Bypass: skip all key checks, always proceed as if valid key exists
+local savedKey = loadVerifiedKey()
+local usedKey = savedKey or getgenv().SCRIPT_KEY or "BYPASS_KEY"
+
+-- Pretend we got a valid response
+if ui.showSuccess then
+    local msg = savedKey and "Saved Key Accepted (bypassed)" or "No key needed (bypassed)"
+    ui:showSuccess(msg)
+end
+
+getgenv().SCRIPT_KEY = usedKey
+
+-- Clean up and close UI automatically
+if ui.setLoadingState then
+    ui:setLoadingState(false)
+end
+
+if ui.close then 
+    ui:close() 
+end
+
+return
+
+-- The lines below are no longer needed — you can safely delete them or leave commented:
+-- if ui.setLoadingState then ui:setLoadingState(false) end
+-- while not getgenv().UI_CLOSED do task.wait(0.1) end
+-- return getgenv().SCRIPT_KEY
 end)()
 
 -- This file was protected using Luraph Obfuscator v14.6 [https://lura.ph/]
