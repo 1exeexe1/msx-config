@@ -1,0 +1,95 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local brick = ReplicatedStorage:FindFirstChild("Brick")
+
+-- High-precision randomization seed
+math.randomseed(os.clock() * 1000)
+
+-- Function to pick ANY color except black
+local function getRandomColor()
+    local r = math.random(0, 255)
+    local g = math.random(0, 255)
+    local b = math.random(0, 255)
+    
+    -- Safety check: if all channels are too dark, force a bright value
+    if r < 50 and g < 50 and b < 50 then
+        r = math.random(150, 255)
+    end
+    
+    return Color3.fromRGB(r, g, b)
+end
+
+-- Shuffle function for text variety
+local function shuffleTable(t)
+    for i = #t, 2, -1 do
+        local j = math.random(i)
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
+local function applyRainbowHackerCube()
+    local tool = LocalPlayer.Backpack:FindFirstChild("Paint") or Character:FindFirstChild("Paint")
+    if not tool or not brick then return end
+
+    local remote = tool:FindFirstChild("Event", true) or tool:FindFirstChildWhichIsA("RemoteEvent", true)
+    if not remote then return end
+
+    local rootPos = Character.HumanoidRootPart.Position
+    local key = "both \u{1F91D}"
+    local PURE_BLACK = Color3.fromRGB(0, 0, 0)
+
+    -- THE FIXED BOTTOM TEXT
+    local discordText = 'D<font size= "0">ddxdsxc</font>is<font size= "0">ddxdsxc</font>c<font size= "0">ddxdsxc</font>o<font size= "0">ddxdsxc</font>rd.<font size= "0">ddxdsxc</font>gg/<font size= "0">ddxdsxc</font>d7qJCEHE8t'
+
+    -- THE POOL FOR THE OTHER 5 SIDES
+    local otherTexts = {
+        'N<font size= "0">ddxdsxc</font>i<font size= "0">ddxdsxc</font>gg<font size= "0">ddxdsxc</font>a<font size= "0">ddxdsxc</font> Cant Do <font size= "0">ddxdsxc</font>s<font size= "0">ddxdsxc</font>h<font size= "0">ddxdsxc</font>it',
+        "Extra c00l people - rnexeexe, a_sean and flamefaml",
+        "Server hacked by stik XD",
+        "Feel free to use this at the server",
+        "This is so op!!"
+    }
+    shuffleTable(otherTexts)
+
+    -- 1. SETUP: INITIAL TOXIC BLACK LAYER
+    remote:FireServer(brick, Enum.NormalId.Top, rootPos, key, PURE_BLACK, "toxic", "")
+    task.wait(0.2)
+
+    -- 2. APPLY THE RANDOMIZED SIDES (Excluding Bottom)
+    local randomSides = {
+        Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Top, 
+        Enum.NormalId.Right, Enum.NormalId.Left
+    }
+
+    for i, side in ipairs(randomSides) do
+        remote:FireServer(brick, side, rootPos, key, getRandomColor(), "spray", otherTexts[i])
+        task.wait(0.1)
+    end
+
+    -- 3. APPLY THE LOCKED BOTTOM SIDE
+    remote:FireServer(brick, Enum.NormalId.Bottom, rootPos, key, getRandomColor(), "spray", discordText)
+    task.wait(0.1)
+
+    -- 4. THE UNANCHOR FIX (Only unanchors if currently anchored)
+    if brick.Anchored == true then
+        remote:FireServer(brick, Enum.NormalId.Top, rootPos, "material", PURE_BLACK, "anchor", "")
+    end
+    
+    -- Final Material set to Neon
+    remote:FireServer(brick, Enum.NormalId.Top, rootPos, "material", PURE_BLACK, "neon", "")
+    
+    -- NOTIFICATION
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = "TimeStand",
+            Text = "Nuked Successfully!",
+            Duration = 5
+        })
+    end)
+end
+
+applyRainbowHackerCube()
