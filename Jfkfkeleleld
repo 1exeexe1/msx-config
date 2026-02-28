@@ -1,0 +1,118 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
+
+-- 1. MOBILE NOTIFICATION
+local function notify(title, text)
+    StarterGui:SetCore("SendNotification", {
+        Title = title;
+        Text = text;
+        Duration = 3;
+    })
+end
+
+-- 2. SETTINGS
+local originalPos = root.CFrame
+local handshake = "both \240\159\164\157" 
+local black = Color3.new(0, 0, 0)
+local sides = {"Front", "Back", "Top", "Bottom", "Left", "Right"}
+
+-- MOBILE STABILITY SETTINGS
+local syncTime = 0.08    -- Slightly slower for mobile network stability
+local batchPause = 0.02 
+local running = true     -- Toggle state
+
+-- 3. MOBILE GUI BUTTON
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local StopBtn = Instance.new("TextButton", ScreenGui)
+StopBtn.Size = UDim2.new(0, 100, 0, 50)
+StopBtn.Position = UDim2.new(0.5, -50, 0.1, 0)
+StopBtn.Text = "STOP VOID"
+StopBtn.BackgroundColor3 = Color3.new(0.7, 0, 0)
+StopBtn.TextColor3 = Color3.new(1, 1, 1)
+
+StopBtn.MouseButton1Click:Connect(function()
+    running = false
+    StopBtn.Text = "STOPPING..."
+end)
+
+-- 4. THE FIXED NOCLIP
+local noclipConnection
+local function setNoClip(state)
+    if state then
+        noclipConnection = RunService.Stepped:Connect(function()
+            if char and char.Parent then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+        end)
+    else
+        if noclipConnection then noclipConnection:Disconnect() end
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end
+end
+
+local function startMobileVoid()
+    notify("Mobile Aura", "NoClip: ON | Running...")
+    setNoClip(true)
+    
+    while running do
+        -- 5. TOOL CHECK (AUTO-STOP IF LOST)
+        local tool = player.Backpack:FindFirstChild("Paint") or char:FindFirstChild("Paint")
+        if not tool then
+            notify("Stopped", "Paint tool lost.")
+            break 
+        end
+        
+        tool.Parent = char
+        local event = tool:WaitForChild("Script"):WaitForChild("Event")
+
+        -- 6. TARGET SCAN
+        local targets = {}
+        for _, obj in pairs(game.Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Name == "Brick" and obj.Color ~= black then
+                table.insert(targets, obj)
+            end
+        end
+
+        if #targets == 0 then
+            notify("Finished", "Map is fully black.")
+            break 
+        end
+
+        -- 7. PROCESSING
+        for i, brick in ipairs(targets) do
+            if not running or not (player.Backpack:FindFirstChild("Paint") or char:FindFirstChild("Paint")) then 
+                break 
+            end
+
+            root.CFrame = brick.CFrame
+            task.wait(syncTime)
+
+            -- Parallel Side Spray
+            task.spawn(function()
+                for _, side in ipairs(sides) do
+                    event:FireServer(brick, side, brick.Position, handshake, black, "spray", " ")
+                end
+            end)
+
+            if i % 8 == 0 then task.wait(batchPause) end
+        end
+        
+        root.CFrame = originalPos
+        task.wait(0.5)
+    end
+
+    -- 8. CLEANUP
+    root.CFrame = originalPos
+    setNoClip(false)
+    ScreenGui:Destroy()
+    notify("System Off", "NoClip Disabled.")
+end
+
+task.spawn(startMobileVoid)
