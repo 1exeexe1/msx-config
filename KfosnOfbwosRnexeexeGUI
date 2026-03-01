@@ -1,4 +1,5 @@
--- Example skeleton (custom UI, no library)
+-- Custom ¥harrz UI (green-purple theme) - LocalScript
+-- Put this in a loader or exploit executor
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -9,47 +10,203 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TimeStandCustomUI"
+screenGui.Name = "YharrzUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- ── Bubble Toggle Button ──
-local bubble = Instance.new("Frame")
+-- =====================================
+-- Floating Bubble Toggle Button
+-- =====================================
+local bubble = Instance.new("TextButton")
+bubble.Name = "ToggleBubble"
 bubble.Size = UDim2.new(0, 60, 0, 60)
-bubble.Position = UDim2.new(0.05, 0, 0.85, 0)  -- bottom-left-ish start
-bubble.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-bubble.BackgroundTransparency = 0.3
-bubble.BorderSizePixel = 0
+bubble.Position = UDim2.new(0.5, -30, 0.1, 0)  -- Top-middle
+bubble.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+bubble.Text = "R"
+bubble.TextColor3 = Color3.fromRGB(255, 0, 0)
+bubble.TextScaled = true
+bubble.Font = Enum.Font.GothamBlack
 bubble.Parent = screenGui
 
 local bubbleCorner = Instance.new("UICorner")
-bubbleCorner.CornerRadius = UDim2.new(1, 0, 1, 0)  -- full circle
+bubbleCorner.CornerRadius = UDim.new(1, 0)  -- Full circle
 bubbleCorner.Parent = bubble
 
 local bubbleStroke = Instance.new("UIStroke")
-bubbleStroke.Color = Color3.fromRGB(100, 255, 100)  -- green accent
+bubbleStroke.Color = Color3.fromRGB(100, 255, 150)
 bubbleStroke.Thickness = 2
 bubbleStroke.Transparency = 0.4
 bubbleStroke.Parent = bubble
 
-local rLabel = Instance.new("TextLabel")
-rLabel.Size = UDim2.new(1, 0, 1, 0)
-rLabel.BackgroundTransparency = 1
-rLabel.Text = "R"
-rLabel.TextColor3 = Color3.fromRGB(255, 0, 0)  -- bright red
-rLabel.Font = Enum.Font.GothamBlack
-rLabel.TextSize = 42
-rLabel.TextStrokeTransparency = 0.7
-rLabel.TextStrokeColor3 = Color3.new(0,0,0)
-rLabel.Parent = bubble
-
 -- Make bubble draggable
-local dragging, dragInput, dragStart, startPos
+local draggingBubble = false
+local dragStartBubble, startPosBubble
+
 bubble.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingBubble = true
+        dragStartBubble = input.Position
+        startPosBubble = bubble.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingBubble = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingBubble and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStartBubble
+        bubble.Position = UDim2.new(
+            startPosBubble.X.Scale,
+            startPosBubble.X.Offset + delta.X,
+            startPosBubble.Y.Scale,
+            startPosBubble.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- =====================================
+-- Main GUI Frame
+-- =====================================
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0.7, 0, 0.6, 0)
+mainFrame.Position = UDim2.new(0.15, 0, 0.2, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+mainFrame.BackgroundTransparency = 0.15
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+-- Green → Purple gradient
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 120)),   -- Green left
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(140, 80, 220)), -- Mix/blur area
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 255))    -- Purple right
+}
+gradient.Rotation = 0  -- Horizontal
+gradient.Parent = mainFrame
+
+-- Optional glow stroke
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(120, 255, 180)
+mainStroke.Thickness = 1.5
+mainStroke.Transparency = 0.5
+mainStroke.Parent = mainFrame
+
+-- Top bar (draggable area)
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, 40)
+topBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+
+local topGradient = Instance.new("UIGradient")
+topGradient.Color = gradient.Color
+topGradient.Parent = topBar
+
+-- Name label
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(0.3, 0, 1, 0)
+nameLabel.Position = UDim2.new(0.7, 0, 0, 0)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Text = "¥harrz"
+nameLabel.TextColor3 = Color3.fromRGB(200, 255, 220)
+nameLabel.TextScaled = true
+nameLabel.Font = Enum.Font.GothamBold
+nameLabel.Parent = topBar
+
+-- X button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.Gotham
+closeBtn.Parent = topBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeBtn
+
+-- Gear (placeholder)
+local gearBtn = Instance.new("TextButton")
+gearBtn.Size = UDim2.new(0, 30, 0, 30)
+gearBtn.Position = UDim2.new(1, -70, 0, 5)
+gearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+gearBtn.Text = "⚙"
+gearBtn.TextColor3 = Color3.new(1,1,1)
+gearBtn.Font = Enum.Font.Gotham
+gearBtn.Parent = topBar
+
+-- Tabs area (left sidebar-ish)
+local tabsFrame = Instance.new("Frame")
+tabsFrame.Size = UDim2.new(0.25, 0, 1, -40)
+tabsFrame.Position = UDim2.new(0, 0, 0, 40)
+tabsFrame.BackgroundTransparency = 1
+tabsFrame.Parent = mainFrame
+
+-- Content area
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(0.75, 0, 1, -40)
+contentFrame.Position = UDim2.new(0.25, 0, 0, 40)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+-- Simple tab buttons (expand later)
+local homeTabBtn = Instance.new("TextButton")
+homeTabBtn.Size = UDim2.new(1, 0, 0.15, 0)
+homeTabBtn.Position = UDim2.new(0, 0, 0, 0)
+homeTabBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 80)
+homeTabBtn.Text = "Home"
+homeTabBtn.TextColor3 = Color3.new(1,1,1)
+homeTabBtn.Font = Enum.Font.GothamSemibold
+homeTabBtn.Parent = tabsFrame
+
+local opTabBtn = Instance.new("TextButton")
+opTabBtn.Size = UDim2.new(1, 0, 0.15, 0)
+opTabBtn.Position = UDim2.new(0, 0, 0.17, 0)
+opTabBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
+opTabBtn.Text = "OP"
+opTabBtn.TextColor3 = Color3.new(1,1,1)
+opTabBtn.Font = Enum.Font.GothamSemibold
+opTabBtn.Parent = tabsFrame
+
+-- =====================================
+-- Toggle logic
+-- =====================================
+local function toggleUI()
+    mainFrame.Visible = not mainFrame.Visible
+end
+
+bubble.MouseButton1Click:Connect(toggleUI)
+closeBtn.MouseButton1Click:Connect(toggleUI)
+
+-- Make main frame draggable via top bar
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+topBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = bubble.Position
+        startPos = mainFrame.Position
+        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -58,7 +215,7 @@ bubble.InputBegan:Connect(function(input)
     end
 end)
 
-bubble.InputChanged:Connect(function(input)
+topBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
@@ -66,130 +223,11 @@ end)
 
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        bubble.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        update(input)
     end
 end)
 
--- ── Main GUI Frame ──
-local mainGui = Instance.new("Frame")
-mainGui.Name = "Main"
-mainGui.Size = UDim2.new(0.65, 0, 0.75, 0)          -- horizontal rectangle
-mainGui.Position = UDim2.new(0.175, 0, 0.125, 0)   -- centered-ish
-mainGui.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-mainGui.BorderSizePixel = 0
-mainGui.Visible = false
-mainGui.Parent = screenGui
+-- Optional: simple blur behind main frame (add a larger transparent frame + blur module if you want)
+-- For now skipped to keep it lightweight
 
--- Green → Purple gradient
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 120)),   -- bright green left
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 0, 180)),  -- mix/blur area
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 0, 255))    -- purple right
-}
-gradient.Rotation = 0  -- left to right
-gradient.Parent = mainGui
-
--- Optional subtle blur (if you want bloom/blur effect, needs Lighting setup or UI Blur)
--- local blur = Instance.new("BlurEffect") etc. but usually better with UIGradient alone
-
-local mainCorner = Instance.new("UICorner")  -- but you said NO rounded → set to 0 or remove
-mainCorner.CornerRadius = UDim2.new(0,0,0,0)
-mainCorner.Parent = mainGui  -- or just delete it
-
--- Top bar
-local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1,0,0,40)
-topBar.BackgroundColor3 = Color3.fromRGB(15,15,20)
-topBar.BorderSizePixel = 0
-topBar.Parent = mainGui
-
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(0.3,0,1,0)
-titleLabel.Position = UDim2.new(0.7,0,0,0)  -- right side
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "TimeStand Premium"       -- or your name
-titleLabel.TextColor3 = Color3.fromRGB(200,255,200)
-titleLabel.Font = Enum.Font.GothamSemibold
-titleLabel.TextSize = 18
-titleLabel.TextXAlignment = Enum.TextXAlignment.Right
-titleLabel.Parent = topBar
-
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0,30,0,30)
-closeBtn.Position = UDim2.new(1,-35,0,5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(180,0,0)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Parent = topBar
-
--- Gear button next to X (placeholder)
-local gearBtn = Instance.new("ImageButton")
-gearBtn.Size = UDim2.new(0,28,0,28)
-gearBtn.Position = UDim2.new(1,-70,0,6)
-gearBtn.BackgroundTransparency = 1
-gearBtn.Image = "rbxassetid://3926305904"  -- example gear icon, change to yours
-gearBtn.Parent = topBar
-
--- Sidebar for tabs (left vertical)
-local sidebar = Instance.new("Frame")
-sidebar.Size = UDim2.new(0.22,0,1,-40)
-sidebar.Position = UDim2.new(0,0,0,40)
-sidebar.BackgroundTransparency = 0.4
-sidebar.Parent = mainGui
-
--- Gradient on sidebar too, or solid dark
--- Add scrolling if many tabs
-local tabList = Instance.new("ScrollingFrame")
-tabList.Size = UDim2.new(1,0,1,0)
-tabList.CanvasSize = UDim2.new(0,0,0,300)  -- adjust
-tabList.Parent = sidebar
-
--- Example tabs (like your screenshot)
-local tabs = {"Home", "Players", "Auras (WIP)", "Scripts", "AntiStand", "Target", "Settings"}
-
-for i, tabName in ipairs(tabs) do
-    local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(1,0,0,50)
-    tabBtn.Position = UDim2.new(0,0,0,(i-1)*50)
-    tabBtn.BackgroundColor3 = Color3.fromRGB(40,40,60)
-    tabBtn.Text = tabName
-    tabBtn.TextColor3 = Color3.fromRGB(180,255,180)
-    tabBtn.Font = Enum.Font.Gotham
-    tabBtn.TextSize = 16
-    tabBtn.Parent = tabList
-    
-    -- Add icon if wanted (ImageLabel left of text)
-    
-    tabBtn.MouseButton1Click:Connect(function()
-        -- Switch content frame visibility or clear/rebuild right panel
-        print("Switched to " .. tabName)
-        -- Here you'd show the corresponding section with your remotes/buttons
-    end)
-end
-
--- Content area (right side)
-local content = Instance.new("Frame")
-content.Size = UDim2.new(0.78,0,1,-40)
-content.Position = UDim2.new(0.22,0,0,40)
-content.BackgroundTransparency = 1
-content.Parent = mainGui
-
--- Example: put your Infinite Yield load button, rainbow toggle, etc. here when tab selected
-
--- Toggle logic
-local function toggleGui()
-    mainGui.Visible = not mainGui.Visible
-end
-
-bubble.MouseButton1Click:Connect(toggleGui)
-closeBtn.MouseButton1Click:Connect(toggleGui)
-
--- Make main GUI draggable (top bar)
-topBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        -- similar drag logic as bubble
-    end
-end)
+print("¥harrz UI loaded! Click the red R bubble to open.")
