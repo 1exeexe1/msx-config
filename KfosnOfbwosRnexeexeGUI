@@ -1,26 +1,40 @@
--- Custom ¥harrz UI (green-purple theme) - LocalScript
--- Put this in a loader or exploit executor
+-- ¥harrz Custom UI - with OP Tab integrated (LocalScript)
+-- Green-purple theme, OP tab with brick text/color customization
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Create ScreenGui
+-- Original script dependencies
+local brick = ReplicatedStorage:WaitForChild("Brick", 5)  -- Wait a bit
+local paintTool = player.Backpack:FindFirstChild("Paint") or player.Character:WaitForChild("Paint", 10)
+local remote = paintTool and (paintTool:FindFirstChild("Event") or paintTool:FindFirstChildWhichIsA("RemoteEvent"))
+
+-- Fallback if missing
+if not remote or not brick then
+    warn("Missing Paint tool/remote or Brick - some features disabled")
+end
+
+local rootPos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position or Vector3.new()
+
+local key = "both \u{1F91D}"
+local PURE_BLACK = Color3.fromRGB(0, 0, 0)
+
+-- ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "YharrzUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- =====================================
--- Floating Bubble Toggle Button
--- =====================================
+-- Bubble Toggle (draggable, top-middle start)
 local bubble = Instance.new("TextButton")
-bubble.Name = "ToggleBubble"
 bubble.Size = UDim2.new(0, 60, 0, 60)
-bubble.Position = UDim2.new(0.5, -30, 0.1, 0)  -- Top-middle
+bubble.Position = UDim2.new(0.5, -30, 0.05, 0)
 bubble.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 bubble.Text = "R"
 bubble.TextColor3 = Color3.fromRGB(255, 0, 0)
@@ -28,159 +42,343 @@ bubble.TextScaled = true
 bubble.Font = Enum.Font.GothamBlack
 bubble.Parent = screenGui
 
-local bubbleCorner = Instance.new("UICorner")
-bubbleCorner.CornerRadius = UDim.new(1, 0)  -- Full circle
-bubbleCorner.Parent = bubble
+local bubbleCorner = Instance.new("UICorner", bubble)
+bubbleCorner.CornerRadius = UDim.new(1, 0)
 
-local bubbleStroke = Instance.new("UIStroke")
+local bubbleStroke = Instance.new("UIStroke", bubble)
 bubbleStroke.Color = Color3.fromRGB(100, 255, 150)
 bubbleStroke.Thickness = 2
 bubbleStroke.Transparency = 0.4
-bubbleStroke.Parent = bubble
 
--- Make bubble draggable
-local draggingBubble = false
-local dragStartBubble, startPosBubble
-
+-- Draggable bubble logic (same as before)
+local draggingBubble, dragStartBubble, startPosBubble
 bubble.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         draggingBubble = true
         dragStartBubble = input.Position
         startPosBubble = bubble.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                draggingBubble = false
-            end
-        end)
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then draggingBubble = false end end)
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if draggingBubble and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStartBubble
-        bubble.Position = UDim2.new(
-            startPosBubble.X.Scale,
-            startPosBubble.X.Offset + delta.X,
-            startPosBubble.Y.Scale,
-            startPosBubble.Y.Offset + delta.Y
-        )
+        bubble.Position = UDim2.new(startPosBubble.X.Scale, startPosBubble.X.Offset + delta.X, startPosBubble.Y.Scale, startPosBubble.Y.Offset + delta.Y)
     end
 end)
 
--- =====================================
--- Main GUI Frame
--- =====================================
+-- Main Frame (horizontal rect, no round on main, gradient green-purple)
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0.7, 0, 0.6, 0)
-mainFrame.Position = UDim2.new(0.15, 0, 0.2, 0)
+mainFrame.Size = UDim2.new(0.75, 0, 0.65, 0)
+mainFrame.Position = UDim2.new(0.125, 0, 0.175, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-mainFrame.BackgroundTransparency = 0.15
-mainFrame.BorderSizePixel = 0
+mainFrame.BackgroundTransparency = 0.1
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
--- Green → Purple gradient
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 120)),   -- Green left
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(140, 80, 220)), -- Mix/blur area
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 255))    -- Purple right
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 140)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 60, 220)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 0, 255))
 }
-gradient.Rotation = 0  -- Horizontal
 gradient.Parent = mainFrame
 
--- Optional glow stroke
-local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = Color3.fromRGB(120, 255, 180)
+local mainStroke = Instance.new("UIStroke", mainFrame)
+mainStroke.Color = Color3.fromRGB(140, 255, 200)
 mainStroke.Thickness = 1.5
-mainStroke.Transparency = 0.5
-mainStroke.Parent = mainFrame
+mainStroke.Transparency = 0.6
 
--- Top bar (draggable area)
-local topBar = Instance.new("Frame")
-topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 40)
+-- Top Bar
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 45)
 topBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 topBar.BorderSizePixel = 0
-topBar.Parent = mainFrame
 
-local topGradient = Instance.new("UIGradient")
-topGradient.Color = gradient.Color
-topGradient.Parent = topBar
+local topGrad = Instance.new("UIGradient", topBar)
+topGrad.Color = gradient.Color
 
--- Name label
-local nameLabel = Instance.new("TextLabel")
-nameLabel.Size = UDim2.new(0.3, 0, 1, 0)
-nameLabel.Position = UDim2.new(0.7, 0, 0, 0)
+local nameLabel = Instance.new("TextLabel", topBar)
+nameLabel.Size = UDim2.new(0.4, 0, 1, 0)
+nameLabel.Position = UDim2.new(0.6, 0, 0, 0)
 nameLabel.BackgroundTransparency = 1
 nameLabel.Text = "¥harrz"
-nameLabel.TextColor3 = Color3.fromRGB(200, 255, 220)
+nameLabel.TextColor3 = Color3.fromRGB(220, 255, 220)
 nameLabel.TextScaled = true
 nameLabel.Font = Enum.Font.GothamBold
-nameLabel.Parent = topBar
 
--- X button
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0, 40, 0, 35)
+closeBtn.Position = UDim2.new(1, -45, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.Font = Enum.Font.Gotham
-closeBtn.Parent = topBar
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 6)
-closeCorner.Parent = closeBtn
+local closeCorner = Instance.new("UICorner", closeBtn)
+closeCorner.CornerRadius = UDim.new(0, 8)
 
--- Gear (placeholder)
-local gearBtn = Instance.new("TextButton")
-gearBtn.Size = UDim2.new(0, 30, 0, 30)
-gearBtn.Position = UDim2.new(1, -70, 0, 5)
-gearBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-gearBtn.Text = "⚙"
-gearBtn.TextColor3 = Color3.new(1,1,1)
-gearBtn.Font = Enum.Font.Gotham
-gearBtn.Parent = topBar
-
--- Tabs area (left sidebar-ish)
-local tabsFrame = Instance.new("Frame")
-tabsFrame.Size = UDim2.new(0.25, 0, 1, -40)
-tabsFrame.Position = UDim2.new(0, 0, 0, 40)
+-- Tabs Frame (left)
+local tabsFrame = Instance.new("Frame", mainFrame)
+tabsFrame.Size = UDim2.new(0.22, 0, 1, -45)
+tabsFrame.Position = UDim2.new(0, 0, 0, 45)
 tabsFrame.BackgroundTransparency = 1
-tabsFrame.Parent = mainFrame
 
--- Content area
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(0.75, 0, 1, -40)
-contentFrame.Position = UDim2.new(0.25, 0, 0, 40)
+-- Content Frame (right)
+local contentFrame = Instance.new("Frame", mainFrame)
+contentFrame.Size = UDim2.new(0.78, 0, 1, -45)
+contentFrame.Position = UDim2.new(0.22, 0, 0, 45)
 contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
 
--- Simple tab buttons (expand later)
-local homeTabBtn = Instance.new("TextButton")
-homeTabBtn.Size = UDim2.new(1, 0, 0.15, 0)
-homeTabBtn.Position = UDim2.new(0, 0, 0, 0)
-homeTabBtn.BackgroundColor3 = Color3.fromRGB(40, 100, 80)
+-- Tab Buttons (simple for now: Home and OP)
+local homeTabBtn = Instance.new("TextButton", tabsFrame)
+homeTabBtn.Size = UDim2.new(1, 0, 0.2, 0)
+homeTabBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 90)
 homeTabBtn.Text = "Home"
 homeTabBtn.TextColor3 = Color3.new(1,1,1)
 homeTabBtn.Font = Enum.Font.GothamSemibold
-homeTabBtn.Parent = tabsFrame
 
-local opTabBtn = Instance.new("TextButton")
-opTabBtn.Size = UDim2.new(1, 0, 0.15, 0)
-opTabBtn.Position = UDim2.new(0, 0, 0.17, 0)
-opTabBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 120)
+local opTabBtn = Instance.new("TextButton", tabsFrame)
+opTabBtn.Size = UDim2.new(1, 0, 0.2, 0)
+opTabBtn.Position = UDim2.new(0, 0, 0.22, 0)
+opTabBtn.BackgroundColor3 = Color3.fromRGB(90, 50, 140)
 opTabBtn.Text = "OP"
 opTabBtn.TextColor3 = Color3.new(1,1,1)
 opTabBtn.Font = Enum.Font.GothamSemibold
-opTabBtn.Parent = tabsFrame
+
+-- Content holders per tab
+local homeContent = Instance.new("Frame", contentFrame)
+homeContent.Size = UDim2.new(1,0,1,0)
+homeContent.BackgroundTransparency = 1
+homeContent.Visible = true  -- default
+
+local opContent = Instance.new("Frame", contentFrame)
+opContent.Size = UDim2.new(1,0,1,0)
+opContent.BackgroundTransparency = 1
+opContent.Visible = false
+
+-- Simple placeholder for Home
+local homeLabel = Instance.new("TextLabel", homeContent)
+homeLabel.Size = UDim2.new(1,0,0.3,0)
+homeLabel.Position = UDim2.new(0,0,0.3,0)
+homeLabel.BackgroundTransparency = 1
+homeLabel.Text = "Welcome to ¥harrz\n(Home tab - add features later)"
+homeLabel.TextColor3 = Color3.new(1,1,1)
+homeLabel.TextScaled = true
 
 -- =====================================
--- Toggle logic
+-- OP Tab Content - Brick Customizer
 -- =====================================
+
+-- Side texts & colors storage
+local sideData = {
+    Top = {text = "Enter Text Here", color = Color3.fromRGB(255, 100, 100)},
+    Left = {text = "Enter Text Here", color = Color3.fromRGB(100, 255, 100)},
+    Front = {text = "Enter Text Here", color = Color3.fromRGB(100, 100, 255)},
+    Right = {text = "Enter Text Here", color = Color3.fromRGB(255, 255, 100)},
+    Back = {text = "Enter Text Here", color = Color3.fromRGB(255, 150, 255)},
+    Bottom = {text = 'D<font size="0">ddxdsxc</font>is<font size="0">ddxdsxc</font>c<font size="0">ddxdsxc</font>o<font size="0">ddxdsxc</font>rd.<font size="0">ddxdsxc</font>gg/<font size="0">ddxdsxc</font>d7qJCEHE8t', color = Color3.fromRGB(255, 50, 50)}
+}
+
+local sidesOrder = {"Top", "Left", "Front", "Right", "Back", "Bottom"}
+local labels = {"Upside", "Leftside", "Frontside", "Rightside", "Backside", "Downside"}
+
+-- Create 6 text + color rows
+for i, side in ipairs(sidesOrder) do
+    local row = Instance.new("Frame", opContent)
+    row.Size = UDim2.new(1, 0, 0.12, 0)
+    row.Position = UDim2.new(0, 0, (i-1)*0.125, 0)
+    row.BackgroundTransparency = 1
+
+    local textBtn = Instance.new("TextButton", row)
+    textBtn.Size = UDim2.new(0.75, -10, 1, -4)
+    textBtn.Position = UDim2.new(0, 5, 0, 2)
+    textBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    textBtn.Text = sideData[side].text
+    textBtn.TextColor3 = Color3.new(0.9,0.9,0.9)
+    textBtn.TextScaled = true
+    textBtn.Font = Enum.Font.Gotham
+    textBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+    local textCorner = Instance.new("UICorner", textBtn)
+    textCorner.CornerRadius = UDim.new(0, 6)
+
+    local border = Instance.new("UIStroke", textBtn)
+    border.Color = Color3.fromRGB(0, 120, 255)
+    border.Thickness = 2
+    border.Transparency = 0.3
+
+    -- Color preview square on right
+    local colorPrev = Instance.new("Frame", row)
+    colorPrev.Size = UDim2.new(0, 50, 0, 50)
+    colorPrev.Position = UDim2.new(1, -60, 0.5, -25)
+    colorPrev.BackgroundColor3 = sideData[side].color
+
+    local colorCorner = Instance.new("UICorner", colorPrev)
+    colorCorner.CornerRadius = UDim.new(0, 8)
+
+    -- Click to "pick" (demo: random vibrant)
+    colorPrev.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            sideData[side].color = Color3.fromRGB(math.random(100,255), math.random(100,255), math.random(100,255))
+            colorPrev.BackgroundColor3 = sideData[side].color
+        end
+    end)
+
+    -- Update text when changed (user can type directly)
+    textBtn.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            sideData[side].text = textBtn.Text
+        end
+    end)
+end
+
+-- Toxify & Unanchor row
+local actionRow1 = Instance.new("Frame", opContent)
+actionRow1.Size = UDim2.new(1, 0, 0.12, 0)
+actionRow1.Position = UDim2.new(0, 0, 0.78, 0)
+actionRow1.BackgroundTransparency = 1
+
+local toxifyBtn = Instance.new("TextButton", actionRow1)
+toxifyBtn.Size = UDim2.new(0.48, 0, 1, 0)
+toxifyBtn.Position = UDim2.new(0, 0, 0, 0)
+toxifyBtn.BackgroundColor3 = Color3.fromRGB(255, 215, 0)  -- Golden
+toxifyBtn.Text = "Toxify Block"
+toxifyBtn.TextColor3 = Color3.new(0,0,0)
+toxifyBtn.Font = Enum.Font.GothamBold
+toxifyBtn.TextScaled = true
+
+local toxCorner = Instance.new("UICorner", toxifyBtn)
+toxCorner.CornerRadius = UDim.new(0, 8)
+
+toxifyBtn.MouseButton1Click:Connect(function()
+    if remote then
+        remote:FireServer(brick, Enum.NormalId.Top, rootPos, key, PURE_BLACK, "toxic", "")
+        StarterGui:SetCore("SendNotification", {
+            Title = "¥harrz",
+            Text = "Toxified RepStorage Block.",
+            Duration = 4
+        })
+    end
+end)
+
+local unanchorBtn = Instance.new("TextButton", actionRow1)
+unanchorBtn.Size = UDim2.new(0.48, 0, 1, 0)
+unanchorBtn.Position = UDim2.new(0.52, 0, 0, 0)
+unanchorBtn.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+unanchorBtn.Text = "Unanchor Block"
+unanchorBtn.TextColor3 = Color3.new(0,0,0)
+unanchorBtn.Font = Enum.Font.GothamBold
+unanchorBtn.TextScaled = true
+
+local unCorner = Instance.new("UICorner", unanchorBtn)
+unCorner.CornerRadius = UDim.new(0, 8)
+
+unanchorBtn.MouseButton1Click:Connect(function()
+    if brick.Anchored and remote then
+        remote:FireServer(brick, Enum.NormalId.Top, rootPos, "material", PURE_BLACK, "anchor", "")
+        StarterGui:SetCore("SendNotification", {
+            Title = "¥harrz",
+            Text = "Unanchored Repstorage.",
+            Duration = 4
+        })
+    end
+end)
+
+-- Block Color & Apply row
+local actionRow2 = Instance.new("Frame", opContent)
+actionRow2.Size = UDim2.new(1, 0, 0.12, 0)
+actionRow2.Position = UDim2.new(0, 0, 0.9, 0)
+actionRow2.BackgroundTransparency = 1
+
+local blockColorPrev = Instance.new("Frame", actionRow2)
+blockColorPrev.Size = UDim2.new(0.48, 0, 1, 0)
+blockColorPrev.BackgroundColor3 = Color3.fromRGB(255, 215, 0)  -- start golden
+local bcCorner = Instance.new("UICorner", blockColorPrev)
+bcCorner.CornerRadius = UDim.new(0, 8)
+
+blockColorPrev.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        blockColorPrev.BackgroundColor3 = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255))
+    end
+end)
+
+local applyColorBtn = Instance.new("TextButton", actionRow2)
+applyColorBtn.Size = UDim2.new(0.48, 0, 1, 0)
+applyColorBtn.Position = UDim2.new(0.52, 0, 0, 0)
+applyColorBtn.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+applyColorBtn.Text = "Apply Color"
+applyColorBtn.TextColor3 = Color3.new(0,0,0)
+applyColorBtn.Font = Enum.Font.GothamBold
+applyColorBtn.TextScaled = true
+
+local acCorner = Instance.new("UICorner", applyColorBtn)
+acCorner.CornerRadius = UDim.new(0, 8)
+
+applyColorBtn.MouseButton1Click:Connect(function()
+    if remote then
+        remote:FireServer(brick, Enum.NormalId.Top, rootPos, key, blockColorPrev.BackgroundColor3, "spray", "")  -- using spray mode for color apply (adapt if needed)
+        StarterGui:SetCore("SendNotification", {
+            Title = "¥harrz",
+            Text = "Applied Input Color on Repstorage.",
+            Duration = 4
+        })
+    end
+end)
+
+-- Final Apply Text button
+local applyTextBtn = Instance.new("TextButton", opContent)
+applyTextBtn.Size = UDim2.new(0.9, 0, 0.1, 0)
+applyTextBtn.Position = UDim2.new(0.05, 0, 0.99, -60)
+applyTextBtn.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+applyTextBtn.Text = "Apply Text"
+applyTextBtn.TextColor3 = Color3.new(0,0,0)
+applyTextBtn.Font = Enum.Font.GothamBold
+applyTextBtn.TextScaled = true
+
+local atCorner = Instance.new("UICorner", applyTextBtn)
+atCorner.CornerRadius = UDim.new(0, 10)
+
+applyTextBtn.MouseButton1Click:Connect(function()
+    if not remote then return end
+
+    -- Apply spray to sides (excluding bottom first)
+    local sideEnum = {
+        Top = Enum.NormalId.Top,
+        Left = Enum.NormalId.Left,
+        Front = Enum.NormalId.Front,
+        Right = Enum.NormalId.Right,
+        Back = Enum.NormalId.Back,
+        Bottom = Enum.NormalId.Bottom
+    }
+
+    for sideName, data in pairs(sideData) do
+        remote:FireServer(brick, sideEnum[sideName], rootPos, key, data.color, "spray", data.text)
+        task.wait(0.08)
+    end
+
+    -- Final neon
+    remote:FireServer(brick, Enum.NormalId.Top, rootPos, "material", PURE_BLACK, "neon", "")
+
+    StarterGui:SetCore("SendNotification", {
+        Title = "¥harrz",
+        Text = "Applied Text To Repstorage",
+        Duration = 5
+    })
+end)
+
+-- Tab switching
+local currentTab = "Home"
+
+local function switchTab(tabName)
+    homeContent.Visible = (tabName == "Home")
+    opContent.Visible = (tabName == "OP")
+end
+
+homeTabBtn.MouseButton1Click:Connect(function() switchTab("Home") end)
+opTabBtn.MouseButton1Click:Connect(function() switchTab("OP") end)
+
+-- Toggle UI
 local function toggleUI()
     mainFrame.Visible = not mainFrame.Visible
 end
@@ -188,46 +386,22 @@ end
 bubble.MouseButton1Click:Connect(toggleUI)
 closeBtn.MouseButton1Click:Connect(toggleUI)
 
--- Make main frame draggable via top bar
-local dragging, dragInput, dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    mainFrame.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-end
-
+-- Draggable main frame via top bar (same as before)
+local dragging, dragStart, startPos
 topBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = mainFrame.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-topBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Optional: simple blur behind main frame (add a larger transparent frame + blur module if you want)
--- For now skipped to keep it lightweight
-
-print("¥harrz UI loaded! Click the red R bubble to open.")
+print("¥harrz UI loaded - OP tab ready for brick customization!")
