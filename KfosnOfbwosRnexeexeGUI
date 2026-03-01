@@ -1,555 +1,195 @@
--- Custom Trolling UI - Blocky Windows Style (Green & Purple)
--- Based on Hunterstorm's Rayfield script logic
+-- Example skeleton (custom UI, no library)
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
-local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local mouse = player:GetMouse()
-local cam = Workspace.CurrentCamera
 
--- Prevent duplicate UIs
-local existing = playerGui:FindFirstChild("CustomTrollingUI")
-if existing then existing:Destroy() end
-
+-- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CustomTrollingUI"
-screenGui.IgnoreGuiInset = true
+screenGui.Name = "TimeStandCustomUI"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Variables from original script
-local detailedPath = false
-local shovelFlag = false
-local deleteFlag = false
-local rainbow = false
-local rainbowSky = false
-local selectedBlock = false
-local currentMaterial = "neon"
-local h = 0
-local block = nil
-local waitingForClick = false
-local currentBlockPathType = "detailed"
-local currentText = "GET NOOBED BY HUNTERSTORM"
-local spraypaint = false
-local ka = false
-local DeleteClickAura = false
-local currentRepStorageBrickText = "Hello, world!"
-local DCAPos = nil
-local deleteAuraBox = nil
-local showEnlightens = false
-local showInvis = false
-local mode = "both \240\159\164\157"
-
-local paint, event, shovelEvent, deleteEvent
-
-local rayParams = RaycastParams.new()
-rayParams.FilterType = Enum.RaycastFilterType.Exclude
-rayParams.FilterDescendantsInstances = {player.Character or player.CharacterAdded:Wait()}
-
--- Helper functions ------------------------------------------------
-
-local function normalToNormalId(n)
-    local ax = math.abs(n.X)
-    local ay = math.abs(n.Y)
-    local az = math.abs(n.Z)
-    if ay > ax and ay > az then
-        return n.Y > 0 and Enum.NormalId.Top or Enum.NormalId.Bottom
-    elseif ax > ay and ax > az then
-        return n.X > 0 and Enum.NormalId.Right or Enum.NormalId.Left
-    else
-        return n.Z > 0 and Enum.NormalId.Back or Enum.NormalId.Front
-    end
-end
-
-local function getNearestHRP(position)
-    local nearestHRP = nil
-    local maxDist = 20
-    for _, p in Players:GetPlayers() do
-        if p ~= player and p.Character then
-            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local dist = (hrp.Position - position).Magnitude
-                if dist < maxDist then
-                    maxDist = dist
-                    nearestHRP = hrp
-                end
-            end
-        end
-    end
-    return nearestHRP
-end
-
-local function getPaintEvent()
-    local char = player.Character
-    if not char then return end
-    local tool = char:FindFirstChild("Paint") or player.Backpack:FindFirstChild("Paint")
-    if tool then
-        paint = tool
-        local scr = tool:FindFirstChild("Script")
-        if scr then
-            return scr:FindFirstChild("Event")
-        end
-    end
-end
-
-local function refreshTools()
-    local char = player.Character
-    if not char then return end
-    local bp = player.Backpack
-
-    local function find(tname)
-        return char:FindFirstChild(tname) or bp:FindFirstChild(tname)
-    end
-
-    local st = find("Shovel")
-    shovelEvent = st and st:FindFirstChild("Script") and st.Script:FindFirstChild("Event")
-
-    local dt = find("Delete")
-    deleteEvent = dt and dt:FindFirstChild("Script") and dt.Script:FindFirstChild("Event")
-end
-
-local function resetPaint()
-    local char = player.Character
-    if not char then return end
-    local bp = player.Backpack
-    local pt = char:FindFirstChild("Paint") or bp:FindFirstChild("Paint")
-    if pt then
-        local scr = pt:FindFirstChild("Script")
-        if scr then event = scr:FindFirstChild("Event") end
-    end
-end
-
--- UI Creation -----------------------------------------------------
-
-local bubble = Instance.new("TextButton")
-bubble.Name = "Bubble"
-bubble.Text = "+"
-bubble.Size = UDim2.new(0,60,0,60)
-bubble.Position = UDim2.new(1,-80,1,-80)
-bubble.BackgroundColor3 = Color3.fromRGB(0,140,0)
-bubble.TextColor3 = Color3.fromRGB(240,240,240)
-bubble.Font = Enum.Font.SourceSansBold
-bubble.TextSize = 42
-bubble.BorderSizePixel = 3
-bubble.BorderColor3 = Color3.fromRGB(140,0,140)
+-- ── Bubble Toggle Button ──
+local bubble = Instance.new("Frame")
+bubble.Size = UDim2.new(0, 60, 0, 60)
+bubble.Position = UDim2.new(0.05, 0, 0.85, 0)  -- bottom-left-ish start
+bubble.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+bubble.BackgroundTransparency = 0.3
+bubble.BorderSizePixel = 0
 bubble.Parent = screenGui
 
-local frame = Instance.new("Frame")
-frame.Name = "MainFrame"
-frame.Size = UDim2.new(0,480,0,360)
-frame.Position = UDim2.new(0.5,-240,0.5,-180)
-frame.BackgroundColor3 = Color3.fromRGB(192,192,192)
-frame.BorderSizePixel = 2
-frame.BorderColor3 = Color3.fromRGB(0,0,0)
-frame.Visible = false
-frame.Parent = screenGui
+local bubbleCorner = Instance.new("UICorner")
+bubbleCorner.CornerRadius = UDim2.new(1, 0, 1, 0)  -- full circle
+bubbleCorner.Parent = bubble
 
-local title = Instance.new("Frame")
-title.Size = UDim2.new(1,0,0,32)
-title.BackgroundColor3 = Color3.fromRGB(120,0,140)
-title.BorderSizePixel = 1
-title.BorderColor3 = Color3.fromRGB(0,0,0)
-title.Parent = frame
+local bubbleStroke = Instance.new("UIStroke")
+bubbleStroke.Color = Color3.fromRGB(100, 255, 100)  -- green accent
+bubbleStroke.Thickness = 2
+bubbleStroke.Transparency = 0.4
+bubbleStroke.Parent = bubble
 
-local titleText = Instance.new("TextLabel")
-titleText.Text = "Hunterstorm Trolling UI"
-titleText.Size = UDim2.new(1,-40,1,0)
-titleText.BackgroundTransparency = 1
-titleText.TextColor3 = Color3.fromRGB(255,255,255)
-titleText.Font = Enum.Font.ArialBold
-titleText.TextSize = 17
-titleText.TextXAlignment = Enum.TextXAlignment.Left
-titleText.Parent = title
+local rLabel = Instance.new("TextLabel")
+rLabel.Size = UDim2.new(1, 0, 1, 0)
+rLabel.BackgroundTransparency = 1
+rLabel.Text = "R"
+rLabel.TextColor3 = Color3.fromRGB(255, 0, 0)  -- bright red
+rLabel.Font = Enum.Font.GothamBlack
+rLabel.TextSize = 42
+rLabel.TextStrokeTransparency = 0.7
+rLabel.TextStrokeColor3 = Color3.new(0,0,0)
+rLabel.Parent = bubble
+
+-- Make bubble draggable
+local dragging, dragInput, dragStart, startPos
+bubble.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = bubble.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+bubble.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        bubble.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ── Main GUI Frame ──
+local mainGui = Instance.new("Frame")
+mainGui.Name = "Main"
+mainGui.Size = UDim2.new(0.65, 0, 0.75, 0)          -- horizontal rectangle
+mainGui.Position = UDim2.new(0.175, 0, 0.125, 0)   -- centered-ish
+mainGui.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainGui.BorderSizePixel = 0
+mainGui.Visible = false
+mainGui.Parent = screenGui
+
+-- Green → Purple gradient
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 120)),   -- bright green left
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 0, 180)),  -- mix/blur area
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 0, 255))    -- purple right
+}
+gradient.Rotation = 0  -- left to right
+gradient.Parent = mainGui
+
+-- Optional subtle blur (if you want bloom/blur effect, needs Lighting setup or UI Blur)
+-- local blur = Instance.new("BlurEffect") etc. but usually better with UIGradient alone
+
+local mainCorner = Instance.new("UICorner")  -- but you said NO rounded → set to 0 or remove
+mainCorner.CornerRadius = UDim2.new(0,0,0,0)
+mainCorner.Parent = mainGui  -- or just delete it
+
+-- Top bar
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1,0,0,40)
+topBar.BackgroundColor3 = Color3.fromRGB(15,15,20)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainGui
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0.3,0,1,0)
+titleLabel.Position = UDim2.new(0.7,0,0,0)  -- right side
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "TimeStand Premium"       -- or your name
+titleLabel.TextColor3 = Color3.fromRGB(200,255,200)
+titleLabel.Font = Enum.Font.GothamSemibold
+titleLabel.TextSize = 18
+titleLabel.TextXAlignment = Enum.TextXAlignment.Right
+titleLabel.Parent = topBar
 
 local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0,30,0,30)
+closeBtn.Position = UDim2.new(1,-35,0,5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180,0,0)
 closeBtn.Text = "X"
-closeBtn.Size = UDim2.new(0,32,0,32)
-closeBtn.Position = UDim2.new(1,-32,0,0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(180,40,40)
-closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
-closeBtn.Font = Enum.Font.ArialBold
-closeBtn.TextSize = 18
-closeBtn.Parent = title
-closeBtn.MouseButton1Click:Connect(function()
-    frame.Visible = false
-end)
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = topBar
 
--- Dragging
-local drag, dragInput, dragStart, startPos
-title.InputBegan:Connect(function(inp)
-    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-        drag = true
-        dragStart = inp.Position
-        startPos = frame.Position
-        inp.Changed:Connect(function()
-            if inp.UserInputState == Enum.UserInputState.End then drag = false end
-        end)
-    end
-end)
+-- Gear button next to X (placeholder)
+local gearBtn = Instance.new("ImageButton")
+gearBtn.Size = UDim2.new(0,28,0,28)
+gearBtn.Position = UDim2.new(1,-70,0,6)
+gearBtn.BackgroundTransparency = 1
+gearBtn.Image = "rbxassetid://3926305904"  -- example gear icon, change to yours
+gearBtn.Parent = topBar
 
-title.InputChanged:Connect(function(inp)
-    if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-        dragInput = inp
-    end
-end)
+-- Sidebar for tabs (left vertical)
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0.22,0,1,-40)
+sidebar.Position = UDim2.new(0,0,0,40)
+sidebar.BackgroundTransparency = 0.4
+sidebar.Parent = mainGui
 
-UserInputService.InputChanged:Connect(function(inp)
-    if inp == dragInput and drag then
-        local delta = inp.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-    end
-end)
+-- Gradient on sidebar too, or solid dark
+-- Add scrolling if many tabs
+local tabList = Instance.new("ScrollingFrame")
+tabList.Size = UDim2.new(1,0,1,0)
+tabList.CanvasSize = UDim2.new(0,0,0,300)  -- adjust
+tabList.Parent = sidebar
 
--- Tabs
-local tabBar = Instance.new("Frame")
-tabBar.Size = UDim2.new(1,0,0,32)
-tabBar.Position = UDim2.new(0,0,0,32)
-tabBar.BackgroundColor3 = Color3.fromRGB(210,210,210)
-tabBar.BorderSizePixel = 1
-tabBar.BorderColor3 = Color3.fromRGB(100,100,100)
-tabBar.Parent = frame
+-- Example tabs (like your screenshot)
+local tabs = {"Home", "Players", "Auras (WIP)", "Scripts", "AntiStand", "Target", "Settings"}
 
-local function makeTab(name, x)
-    local btn = Instance.new("TextButton")
-    btn.Text = name
-    btn.Size = UDim2.new(0,120,1,0)
-    btn.Position = UDim2.new(0,x*120,0,0)
-    btn.BackgroundColor3 = Color3.fromRGB(192,192,192)
-    btn.TextColor3 = Color3.fromRGB(20,20,20)
-    btn.Font = Enum.Font.Arial
-    btn.TextSize = 15
-    btn.BorderSizePixel = 1
-    btn.BorderColor3 = Color3.fromRGB(80,80,80)
-    btn.Parent = tabBar
-    return btn
-end
-
-local tabMain    = makeTab("Main",    0)
-local tabOP      = makeTab("OP",      1)
-local tabPlayers = makeTab("Players", 2)
-
-local content = Instance.new("ScrollingFrame")
-content.Size = UDim2.new(1,-8,1,-72)
-content.Position = UDim2.new(0,4,0,68)
-content.BackgroundColor3 = Color3.fromRGB(240,240,240)
-content.BorderSizePixel = 1
-content.BorderColor3 = Color3.fromRGB(120,120,120)
-content.ScrollBarThickness = 8
-content.Parent = frame
-
-local list = Instance.new("UIListLayout")
-list.Padding = UDim.new(0,6)
-list.SortOrder = Enum.SortOrder.LayoutOrder
-list.Parent = content
-
--- Element creators
-local function addButton(parent, text, callback)
-    local b = Instance.new("TextButton")
-    b.Text = text
-    b.Size = UDim2.new(1,-12,0,34)
-    b.BackgroundColor3 = Color3.fromRGB(180,180,180)
-    b.TextColor3 = Color3.fromRGB(20,20,20)
-    b.Font = Enum.Font.Arial
-    b.TextSize = 15
-    b.BorderSizePixel = 1
-    b.BorderColor3 = Color3.fromRGB(80,80,80)
-    b.Parent = parent
-    b.MouseButton1Click:Connect(callback)
-end
-
-local function addToggle(parent, name, initial, callback)
-    local f = Instance.new("Frame")
-    f.Size = UDim2.new(1,-12,0,34)
-    f.BackgroundColor3 = Color3.fromRGB(200,200,200)
-    f.BorderSizePixel = 1
-    f.BorderColor3 = Color3.fromRGB(100,100,100)
-    f.Parent = parent
-
-    local lbl = Instance.new("TextLabel")
-    lbl.Text = name
-    lbl.Size = UDim2.new(0.68,0,1,0)
-    lbl.BackgroundTransparency = 1
-    lbl.TextColor3 = Color3.fromRGB(20,20,20)
-    lbl.Font = Enum.Font.Arial
-    lbl.TextSize = 15
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = f
-
-    local tog = Instance.new("TextButton")
-    tog.Size = UDim2.new(0.3,0,0.8,0)
-    tog.Position = UDim2.new(0.69,0,0.1,0)
-    tog.BackgroundColor3 = initial and Color3.fromRGB(0,160,0) or Color3.fromRGB(160,60,60)
-    tog.TextColor3 = Color3.fromRGB(255,255,255)
-    tog.Font = Enum.Font.ArialBold
-    tog.TextSize = 15
-    tog.Text = initial and "ON" or "OFF"
-    tog.Parent = f
-
-    local val = initial
-    tog.MouseButton1Click:Connect(function()
-        val = not val
-        tog.Text = val and "ON" or "OFF"
-        tog.BackgroundColor3 = val and Color3.fromRGB(0,160,0) or Color3.fromRGB(160,60,60)
-        callback(val)
+for i, tabName in ipairs(tabs) do
+    local tabBtn = Instance.new("TextButton")
+    tabBtn.Size = UDim2.new(1,0,0,50)
+    tabBtn.Position = UDim2.new(0,0,0,(i-1)*50)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(40,40,60)
+    tabBtn.Text = tabName
+    tabBtn.TextColor3 = Color3.fromRGB(180,255,180)
+    tabBtn.Font = Enum.Font.Gotham
+    tabBtn.TextSize = 16
+    tabBtn.Parent = tabList
+    
+    -- Add icon if wanted (ImageLabel left of text)
+    
+    tabBtn.MouseButton1Click:Connect(function()
+        -- Switch content frame visibility or clear/rebuild right panel
+        print("Switched to " .. tabName)
+        -- Here you'd show the corresponding section with your remotes/buttons
     end)
 end
 
--- Tab switching
-local currentTab = nil
+-- Content area (right side)
+local content = Instance.new("Frame")
+content.Size = UDim2.new(0.78,0,1,-40)
+content.Position = UDim2.new(0.22,0,0,40)
+content.BackgroundTransparency = 1
+content.Parent = mainGui
 
-local function switchTab(name)
-    if currentTab == name then return end
-    currentTab = name
+-- Example: put your Infinite Yield load button, rainbow toggle, etc. here when tab selected
 
-    for _, child in content:GetChildren() do
-        if child:IsA("GuiObject") then child:Destroy() end
-    end
-
-    if name == "Main" then
-        addToggle(content, "Rainbow Paint", rainbow, function(v) rainbow = v end)
-        addToggle(content, "Shovel", shovelFlag, function(v) shovelFlag = v end)
-        addToggle(content, "Delete", deleteFlag, function(v) deleteFlag = v end)
-        addToggle(content, "Rainbow Sky", rainbowSky, function(v) rainbowSky = v end)
-        addToggle(content, "Detailed Path", detailedPath, function(v) detailedPath = v end)
-        addToggle(content, "Spray Paint (click)", spraypaint, function(v) spraypaint = v end)
-        addToggle(content, "Kill Aura", ka, function(v) ka = v end)
-        addToggle(content, "Delete Aura (click pos)", DeleteClickAura, function(v) DeleteClickAura = v end)
-
-        addButton(content, "Select Block (click any)", function()
-            waitingForClick = true
-            StarterGui:SetCore("SendNotification", {Title="Select", Text="Click a block", Duration=4})
-        end)
-
-        addButton(content, "Refresh Tools", function()
-            refreshTools()
-            resetPaint()
-        end)
-
-    elseif name == "OP" then
-        addToggle(content, "Rainbow Paint", rainbow, function(v) rainbow = v end) -- placeholder
-        addButton(content, "OP features coming...", function() end)
-
-    elseif name == "Players" then
-        addToggle(content, "Enlightened ESP", showEnlightens, function(v) showEnlightens = v end)
-        addToggle(content, "Invisible ESP", showInvis, function(v) showInvis = v end)
-    end
-
-    task.delay(0.05, function()
-        content.CanvasSize = UDim2.new(0,0,0, list.AbsoluteContentSize.Y + 20)
-    end)
+-- Toggle logic
+local function toggleGui()
+    mainGui.Visible = not mainGui.Visible
 end
 
-tabMain.MouseButton1Click:Connect(function() switchTab("Main") end)
-tabOP.MouseButton1Click:Connect(function() switchTab("OP") end)
-tabPlayers.MouseButton1Click:Connect(function() switchTab("Players") end)
+bubble.MouseButton1Click:Connect(toggleGui)
+closeBtn.MouseButton1Click:Connect(toggleGui)
 
--- Initial tab
-switchTab("Main")
-
--- Bubble toggle
-bubble.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
-end)
-
--- Hotkey (optional)
-UserInputService.InputBegan:Connect(function(inp, gpe)
-    if gpe then return end
-    if inp.KeyCode == Enum.KeyCode.K then
-        frame.Visible = not frame.Visible
+-- Make main GUI draggable (top bar)
+topBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        -- similar drag logic as bubble
     end
 end)
-
--- Original logic loops / connections ------------------------------
-
-mouse.Button1Down:Connect(function()
-    if waitingForClick then
-        if mouse.Target then
-            selectedBlockPart = mouse.Target
-            print("Selected block: " .. selectedBlockPart:GetFullName())
-            StarterGui:SetCore("SendNotification", {
-                Title = "Block Selected",
-                Text = selectedBlockPart.Name,
-                Duration = 4
-            })
-        end
-        waitingForClick = false
-        return
-    end
-
-    -- Rainbow Paint (click to paint)
-    if rainbow and paintEvent then
-        local target = mouse.Target
-        if target and target:IsA("BasePart") then
-            local face = normalToFace((mouse.Hit.Position - target.Position).Unit)
-            paintEvent:FireServer(
-                target,
-                face,
-                mouse.Hit.Position,
-                mode,
-                Color3.fromHSV(h, 1, 1),
-                currentMaterial,
-                ""
-            )
-        end
-    end
-
-    -- Delete (single click delete)
-    if deleteFlag and deleteEvent then
-        local target = mouse.Target
-        if target then
-            deleteEvent:FireServer(target, mouse.Hit.Position)
-        end
-    end
-
-    -- Shovel (dig on click)
-    if shovelFlag and shovelEvent then
-        local hit = mouse.Hit
-        shovelEvent:FireServer(
-            workspace.Terrain,
-            Enum.NormalId.Top,
-            hit.Position,
-            "dig"
-        )
-    end
-
-    -- Spray Paint (spray text on click)
-    if spraypaint and paintEvent then
-        local origin = cam.CFrame.Position
-        local direction = (mouse.Hit.Position - origin).Unit * 500
-        local result = workspace:Raycast(origin, direction, rayParams)
-        if result then
-            local normalId = normalToNormalId(result.Normal)
-            paintEvent:FireServer(
-                result.Instance,
-                normalId,
-                result.Position,
-                mode,
-                Color3.fromHSV(h, 1, 1),
-                "spray",
-                currentText
-            )
-        end
-    end
-
-    -- Delete Aura position capture
-    if DeleteClickAura then
-        local origin = cam.CFrame.Position
-        local direction = (mouse.Hit.Position - origin).Unit * 1000
-        local result = workspace:Raycast(origin, direction, rayParams)
-        if result then
-            DCAPos = result.Position
-        end
-    end
-end)
--- ... all your UI code, bubble, frame, tabs, switchTab, mouse.Button1Down ...
-
--- The continuous loop - put this at the END of the script
-RunService.RenderStepped:Connect(function(dt)
-    h = (h + dt * 3) % 1
-    local col = Color3.fromHSV(h, 1, 1)
-
-    refreshTools()
-
-    if rainbowSky and paintEvent then
-        paintEvent:FireServer(
-            Enum.NormalId.Right,
-            Vector3.new(9468.4033203125, 3084.64111328125, 707.554443359375),
-            mode,
-            col,
-            "neon",
-            ""
-        )
-    end
-
-    if detailedPath then
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local pathType = currentBlockPathType
-            local isRainbow = pathType:find("rainbow") ~= nil
-            if isRainbow then pathType = pathType:gsub("rainbow ", "") end
-
-            local build = char:FindFirstChild("Build") or player.Backpack:FindFirstChild("Build")
-            if build then
-                local bscr = build:FindFirstChild("Script")
-                if bscr and bscr:FindFirstChild("Event") then
-                    bscr.Event:FireServer(workspace.Terrain, Enum.NormalId.Top, hrp.Position, pathType)
-                end
-            end
-
-            if isRainbow and paintEvent then
-                local nearest = getNearestBlock(hrp.Position)
-                if nearest then
-                    paintEvent:FireServer(
-                        nearest,
-                        normalToFace(hrp.Position - nearest.Position),
-                        hrp.Position,
-                        mode,
-                        col,
-                        currentMaterial,
-                        ""
-                    )
-                end
-            end
-        end
-    end
-
-    if ka and paintEvent then
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local nearest = getNearestHRP(hrp.Position)
-            if nearest then
-                paintEvent:FireServer(
-                    workspace.Terrain,
-                    Enum.NormalId.Top,
-                    nearest.Position,
-                    mode,
-                    Color3.new(0,0,0),
-                    "toxic",
-                    ""
-                )
-            end
-        end
-    end
-
-    if DeleteClickAura and DCAPos and deleteEvent then
-        if not deleteAuraBox then
-            deleteAuraBox = Instance.new("Part")
-            deleteAuraBox.Name = "DeleteAuraBox"
-            deleteAuraBox.Size = Vector3.new(20,20,20)
-            deleteAuraBox.Anchored = true
-            deleteAuraBox.CanCollide = false
-            deleteAuraBox.Transparency = 0.6
-            deleteAuraBox.Color = Color3.fromRGB(255,80,80)
-            deleteAuraBox.Material = Enum.Material.Neon
-            deleteAuraBox.Parent = workspace
-        end
-        deleteAuraBox.Position = DCAPos
-
-        local overlap = OverlapParams.new()
-        overlap.FilterType = Enum.RaycastFilterType.Exclude
-        overlap.FilterDescendantsInstances = {deleteAuraBox}
-
-        local parts = workspace:GetPartBoundsInBox(CFrame.new(DCAPos), Vector3.new(20,20,20), overlap)
-        for _, part in parts do
-            if part:IsA("BasePart") and part:IsDescendantOf(workspace:FindFirstChild("Bricks") or workspace) then
-                deleteEvent:FireServer(part, part.Position)
-            end
-        end
-    elseif deleteAuraBox then
-        deleteAuraBox:Destroy()
-        deleteAuraBox = nil
-    end
-end)
-
-print("RenderStepped loop added - continuous effects should work now")
-
-print("Custom UI loaded")
