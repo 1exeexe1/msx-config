@@ -72,7 +72,7 @@ local blockColor = Color3.fromRGB(0, 0, 0)
 -- ========================
 -- COLOR PICKER HELPER
 -- ========================
--- Simple HSV color picker popup
+-- Full HSV picker using UIGradient (no asset IDs needed)
 local colorPickerOpen = false
 local colorPickerFrame = nil
 local colorPickerCallback = nil
@@ -85,88 +85,271 @@ local function closeColorPicker()
     end
 end
 
+-- Helper to make a small labeled textbox for the picker
+local function makeNumBox(parent, labelTxt, x, y, w, zIdx)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0, 18, 0, 16)
+    lbl.Position = UDim2.new(0, x, 0, y)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = labelTxt
+    lbl.TextColor3 = Color3.fromRGB(190, 190, 190)
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 10
+    lbl.ZIndex = zIdx
+    lbl.Parent = parent
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0, w, 0, 16)
+    box.Position = UDim2.new(0, x + 18, 0, y)
+    box.BackgroundColor3 = Color3.fromRGB(28, 20, 45)
+    box.TextColor3 = Color3.fromRGB(230, 230, 230)
+    box.PlaceholderText = "0"
+    box.Text = "0"
+    box.Font = Enum.Font.Code
+    box.TextSize = 10
+    box.ZIndex = zIdx
+    box.Parent = parent
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 3)
+    local s = Instance.new("UIStroke"); s.Color = Color3.fromRGB(60,60,100); s.Thickness = 1; s.Parent = box
+    return box
+end
+
 local function openColorPicker(anchorGui, callback)
     closeColorPicker()
     colorPickerOpen = true
     colorPickerCallback = callback
 
+    -- Picker is 260 wide, 280 tall to fit SV box + hue bar + inputs
     local picker = Instance.new("Frame")
     picker.Name = "ColorPicker"
-    picker.Size = UDim2.new(0, 220, 0, 200)
-    picker.Position = UDim2.new(0.5, -110, 0.5, -100)
-    picker.BackgroundColor3 = Color3.fromRGB(20, 15, 35)
+    picker.Size = UDim2.new(0, 260, 0, 278)
+    picker.Position = UDim2.new(0.5, -130, 0.5, -139)
+    picker.BackgroundColor3 = Color3.fromRGB(16, 12, 28)
     picker.BorderSizePixel = 0
     picker.ZIndex = 20
     picker.Parent = ScreenGui
     colorPickerFrame = picker
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = picker
-
+    Instance.new("UICorner", picker).CornerRadius = UDim.new(0, 8)
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(80, 200, 120)
     stroke.Thickness = 1.5
     stroke.Parent = picker
 
+    -- Title bar
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -30, 0, 28)
-    title.Position = UDim2.new(0, 8, 0, 4)
+    title.Size = UDim2.new(1, -32, 0, 26)
+    title.Position = UDim2.new(0, 8, 0, 3)
     title.BackgroundTransparency = 1
-    title.Text = "Pick Color"
-    title.TextColor3 = Color3.fromRGB(200, 255, 200)
+    title.Text = "Color Picker"
+    title.TextColor3 = Color3.fromRGB(210, 230, 210)
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 13
+    title.TextSize = 12
+    title.TextXAlignment = Enum.TextXAlignment.Left
     title.ZIndex = 21
     title.Parent = picker
 
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 24, 0, 24)
-    closeBtn.Position = UDim2.new(1, -28, 0, 4)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    closeBtn.Text = "X"
+    closeBtn.Size = UDim2.new(0, 22, 0, 22)
+    closeBtn.Position = UDim2.new(1, -26, 0, 3)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+    closeBtn.Text = "✕"
     closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
     closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.TextSize = 11
+    closeBtn.TextSize = 10
     closeBtn.ZIndex = 22
     closeBtn.Parent = picker
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0,4)
     closeBtn.MouseButton1Click:Connect(closeColorPicker)
 
-    -- HSV gradient canvas
-    local canvas = Instance.new("ImageLabel")
-    canvas.Size = UDim2.new(1, -16, 0, 110)
-    canvas.Position = UDim2.new(0, 8, 0, 36)
-    canvas.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    canvas.Image = "rbxassetid://698052001" -- HSV gradient
-    canvas.ZIndex = 21
-    canvas.Parent = picker
+    -- ── SV SQUARE (Saturation × Value) ──
+    -- Three layers stacked: white→hueColor (saturation), then transparent→black (value)
+    local svOuter = Instance.new("Frame")
+    svOuter.Size = UDim2.new(1, -16, 0, 150)
+    svOuter.Position = UDim2.new(0, 8, 0, 32)
+    svOuter.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- base hue, updated live
+    svOuter.BorderSizePixel = 0
+    svOuter.ZIndex = 21
+    svOuter.Parent = picker
+    Instance.new("UICorner", svOuter).CornerRadius = UDim.new(0,5)
 
-    local hueBar = Instance.new("ImageLabel")
-    hueBar.Size = UDim2.new(1, -16, 0, 18)
-    hueBar.Position = UDim2.new(0, 8, 0, 152)
-    hueBar.Image = "rbxassetid://698053051" -- hue strip
-    hueBar.BackgroundTransparency = 1
+    -- White→transparent overlay (left=white, right=pure hue)
+    local satLayer = Instance.new("Frame")
+    satLayer.Size = UDim2.new(1, 0, 1, 0)
+    satLayer.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    satLayer.BackgroundTransparency = 0
+    satLayer.BorderSizePixel = 0
+    satLayer.ZIndex = 22
+    satLayer.Parent = svOuter
+    Instance.new("UICorner", satLayer).CornerRadius = UDim.new(0,5)
+    local satGrad = Instance.new("UIGradient")
+    satGrad.Color = ColorSequence.new(Color3.fromRGB(255,255,255), Color3.fromRGB(255,255,255))
+    satGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    satGrad.Rotation = 0
+    satGrad.Parent = satLayer
+
+    -- Transparent→black overlay (top=transparent, bottom=black)
+    local valLayer = Instance.new("Frame")
+    valLayer.Size = UDim2.new(1, 0, 1, 0)
+    valLayer.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    valLayer.BackgroundTransparency = 1
+    valLayer.BorderSizePixel = 0
+    valLayer.ZIndex = 23
+    valLayer.Parent = svOuter
+    Instance.new("UICorner", valLayer).CornerRadius = UDim.new(0,5)
+    local valGrad = Instance.new("UIGradient")
+    valGrad.Color = ColorSequence.new(Color3.fromRGB(0,0,0), Color3.fromRGB(0,0,0))
+    valGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(1, 0),
+    })
+    valGrad.Rotation = 90
+    valGrad.Parent = valLayer
+
+    -- SV cursor dot
+    local svCursor = Instance.new("Frame")
+    svCursor.Size = UDim2.new(0, 10, 0, 10)
+    svCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    svCursor.Position = UDim2.new(1, 0, 0, 0)
+    svCursor.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    svCursor.BackgroundTransparency = 0
+    svCursor.BorderSizePixel = 0
+    svCursor.ZIndex = 25
+    svCursor.Parent = svOuter
+    Instance.new("UICorner", svCursor).CornerRadius = UDim.new(1,0)
+    local svCursorStroke = Instance.new("UIStroke"); svCursorStroke.Color=Color3.fromRGB(0,0,0); svCursorStroke.Thickness=1.5; svCursorStroke.Parent=svCursor
+
+    -- ── HUE BAR ──
+    local hueBar = Instance.new("Frame")
+    hueBar.Size = UDim2.new(1, -16, 0, 16)
+    hueBar.Position = UDim2.new(0, 8, 0, 188)
+    hueBar.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    hueBar.BorderSizePixel = 0
     hueBar.ZIndex = 21
     hueBar.Parent = picker
+    Instance.new("UICorner", hueBar).CornerRadius = UDim.new(0,4)
 
+    -- Build hue gradient: R→Y→G→C→B→M→R
+    local hueGrad = Instance.new("UIGradient")
+    hueGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0/6,   Color3.fromRGB(255,   0,   0)),
+        ColorSequenceKeypoint.new(1/6,   Color3.fromRGB(255, 255,   0)),
+        ColorSequenceKeypoint.new(2/6,   Color3.fromRGB(  0, 255,   0)),
+        ColorSequenceKeypoint.new(3/6,   Color3.fromRGB(  0, 255, 255)),
+        ColorSequenceKeypoint.new(4/6,   Color3.fromRGB(  0,   0, 255)),
+        ColorSequenceKeypoint.new(5/6,   Color3.fromRGB(255,   0, 255)),
+        ColorSequenceKeypoint.new(6/6,   Color3.fromRGB(255,   0,   0)),
+    })
+    hueGrad.Parent = hueBar
+
+    -- Hue cursor
+    local hueCursor = Instance.new("Frame")
+    hueCursor.Size = UDim2.new(0, 6, 1, 4)
+    hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    hueCursor.Position = UDim2.new(0, 0, 0.5, 0)
+    hueCursor.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    hueCursor.BorderSizePixel = 0
+    hueCursor.ZIndex = 22
+    hueCursor.Parent = hueBar
+    Instance.new("UICorner", hueCursor).CornerRadius = UDim.new(0,2)
+    local hc2 = Instance.new("UIStroke"); hc2.Color=Color3.fromRGB(0,0,0); hc2.Thickness=1.2; hc2.Parent=hueCursor
+
+    -- ── COLOR PREVIEW ──
+    local preview = Instance.new("Frame")
+    preview.Size = UDim2.new(0, 36, 0, 36)
+    preview.Position = UDim2.new(1, -44, 0, 210)
+    preview.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    preview.BorderSizePixel = 0
+    preview.ZIndex = 21
+    preview.Parent = picker
+    Instance.new("UICorner", preview).CornerRadius = UDim.new(0,5)
+    local prevStroke = Instance.new("UIStroke"); prevStroke.Color=Color3.fromRGB(80,200,120); prevStroke.Thickness=1.2; prevStroke.Parent=preview
+
+    -- ── HEX INPUT (left side) ──
+    local hexLbl = Instance.new("TextLabel")
+    hexLbl.Size = UDim2.new(0, 28, 0, 16)
+    hexLbl.Position = UDim2.new(0, 8, 0, 212)
+    hexLbl.BackgroundTransparency = 1
+    hexLbl.Text = "HEX"
+    hexLbl.TextColor3 = Color3.fromRGB(190,190,190)
+    hexLbl.Font = Enum.Font.Gotham
+    hexLbl.TextSize = 10
+    hexLbl.ZIndex = 21
+    hexLbl.Parent = picker
+
+    local hexBox = Instance.new("TextBox")
+    hexBox.Size = UDim2.new(0, 72, 0, 16)
+    hexBox.Position = UDim2.new(0, 36, 0, 212)
+    hexBox.BackgroundColor3 = Color3.fromRGB(28, 20, 45)
+    hexBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+    hexBox.PlaceholderText = "FF0000"
+    hexBox.Text = "FF0000"
+    hexBox.Font = Enum.Font.Code
+    hexBox.TextSize = 10
+    hexBox.ZIndex = 21
+    hexBox.Parent = picker
+    Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0,3)
+    local hs = Instance.new("UIStroke"); hs.Color=Color3.fromRGB(60,60,100); hs.Thickness=1; hs.Parent=hexBox
+
+    -- ── RGB INPUTS (below hex) ──
+    local rBox = makeNumBox(picker, "R", 8,   232, 32, 21)
+    local gBox = makeNumBox(picker, "G", 62,  232, 32, 21)
+    local bBox = makeNumBox(picker, "B", 116, 232, 32, 21)
+
+    -- ── STATE ──
     local selectedH = 0
     local selectedS = 1
     local selectedV = 1
+    local suppressSync = false -- prevent feedback loops
+
+    local function syncInputsFromHSV()
+        suppressSync = true
+        local c = Color3.fromHSV(selectedH, selectedS, selectedV)
+        local ri = math.floor(c.R * 255 + 0.5)
+        local gi = math.floor(c.G * 255 + 0.5)
+        local bi = math.floor(c.B * 255 + 0.5)
+        hexBox.Text = string.format("%02X%02X%02X", ri, gi, bi)
+        rBox.Text = tostring(ri)
+        gBox.Text = tostring(gi)
+        bBox.Text = tostring(bi)
+        preview.BackgroundColor3 = c
+        suppressSync = false
+    end
 
     local function updateColor()
         local c = Color3.fromHSV(selectedH, selectedS, selectedV)
-        canvas.BackgroundColor3 = Color3.fromHSV(selectedH, 1, 1)
+        -- Update SV square hue tint
+        svOuter.BackgroundColor3 = Color3.fromHSV(selectedH, 1, 1)
+        -- Update cursors
+        hueCursor.Position = UDim2.new(selectedH, 0, 0.5, 0)
+        svCursor.Position = UDim2.new(selectedS, 0, 1 - selectedV, 0)
+        -- Update preview
+        preview.BackgroundColor3 = c
+        syncInputsFromHSV()
         if colorPickerCallback then
             colorPickerCallback(c)
         end
     end
 
-    -- Hue drag
+    -- Initial state
+    updateColor()
+
+    -- ── DRAG INPUT ──
     local hueDragging = false
+    local svDragging = false
+
     hueBar.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
             hueDragging = true
+            -- Immediate pick on click
+            local abs = hueBar.AbsolutePosition
+            local size = hueBar.AbsoluteSize
+            local pos = UserInputService:GetMouseLocation()
+            selectedH = math.clamp((pos.X - abs.X) / size.X, 0, 1)
+            updateColor()
         end
     end)
     hueBar.InputEnded:Connect(function(i)
@@ -175,20 +358,24 @@ local function openColorPicker(anchorGui, callback)
         end
     end)
 
-    -- SV drag
-    local svDragging = false
-    canvas.InputBegan:Connect(function(i)
+    svOuter.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
             svDragging = true
+            local abs = svOuter.AbsolutePosition
+            local size = svOuter.AbsoluteSize
+            local pos = UserInputService:GetMouseLocation()
+            selectedS = math.clamp((pos.X - abs.X) / size.X, 0, 1)
+            selectedV = 1 - math.clamp((pos.Y - abs.Y) / size.Y, 0, 1)
+            updateColor()
         end
     end)
-    canvas.InputEnded:Connect(function(i)
+    svOuter.InputEnded:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
             svDragging = false
         end
     end)
 
-    RunService.RenderStepped:Connect(function()
+    local rsConn = RunService.RenderStepped:Connect(function()
         if not colorPickerFrame then return end
         local pos = UserInputService:GetMouseLocation()
         if hueDragging then
@@ -198,51 +385,52 @@ local function openColorPicker(anchorGui, callback)
             updateColor()
         end
         if svDragging then
-            local abs = canvas.AbsolutePosition
-            local size = canvas.AbsoluteSize
+            local abs = svOuter.AbsolutePosition
+            local size = svOuter.AbsoluteSize
             selectedS = math.clamp((pos.X - abs.X) / size.X, 0, 1)
             selectedV = 1 - math.clamp((pos.Y - abs.Y) / size.Y, 0, 1)
             updateColor()
         end
     end)
 
-    -- Hex input
-    local hexLabel = Instance.new("TextLabel")
-    hexLabel.Size = UDim2.new(0, 60, 0, 18)
-    hexLabel.Position = UDim2.new(0, 8, 0, 175)
-    hexLabel.BackgroundTransparency = 1
-    hexLabel.Text = "HEX:"
-    hexLabel.TextColor3 = Color3.fromRGB(180,180,180)
-    hexLabel.Font = Enum.Font.Gotham
-    hexLabel.TextSize = 11
-    hexLabel.ZIndex = 21
-    hexLabel.Parent = picker
+    -- Clean up RenderStepped when picker closes
+    local origClose = closeColorPicker
+    -- patch: disconnect on next destroy
+    picker.AncestryChanged:Connect(function()
+        pcall(function() rsConn:Disconnect() end)
+    end)
 
-    local hexBox = Instance.new("TextBox")
-    hexBox.Size = UDim2.new(0, 100, 0, 18)
-    hexBox.Position = UDim2.new(0, 65, 0, 175)
-    hexBox.BackgroundColor3 = Color3.fromRGB(30, 22, 50)
-    hexBox.TextColor3 = Color3.fromRGB(255,255,255)
-    hexBox.PlaceholderText = "FFFFFF"
-    hexBox.Text = ""
-    hexBox.Font = Enum.Font.Code
-    hexBox.TextSize = 11
-    hexBox.ZIndex = 21
-    hexBox.Parent = picker
-    Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0,4)
-
+    -- ── HEX INPUT HANDLER ──
     hexBox.FocusLost:Connect(function()
-        local hex = hexBox.Text:gsub("#","")
+        if suppressSync then return end
+        local hex = hexBox.Text:gsub("#",""):upper()
         if #hex == 6 then
             local r = tonumber(hex:sub(1,2), 16)
             local g = tonumber(hex:sub(3,4), 16)
             local b = tonumber(hex:sub(5,6), 16)
             if r and g and b then
-                local c = Color3.fromRGB(r,g,b)
+                local c = Color3.fromRGB(r, g, b)
+                selectedH, selectedS, selectedV = Color3.toHSV(c)
+                updateColor()
                 if colorPickerCallback then colorPickerCallback(c) end
             end
         end
     end)
+
+    -- ── RGB INPUT HANDLERS ──
+    local function applyRGB()
+        if suppressSync then return end
+        local r = math.clamp(tonumber(rBox.Text) or 0, 0, 255)
+        local g = math.clamp(tonumber(gBox.Text) or 0, 0, 255)
+        local b = math.clamp(tonumber(bBox.Text) or 0, 0, 255)
+        local c = Color3.fromRGB(r, g, b)
+        selectedH, selectedS, selectedV = Color3.toHSV(c)
+        updateColor()
+        if colorPickerCallback then colorPickerCallback(c) end
+    end
+    rBox.FocusLost:Connect(applyRGB)
+    gBox.FocusLost:Connect(applyRGB)
+    bBox.FocusLost:Connect(applyRGB)
 end
 
 -- ========================
@@ -340,7 +528,7 @@ titleLabel.Size = UDim2.new(1, -100, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "¥harrz"
-titleLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
+titleLabel.TextColor3 = Color3.fromRGB(215, 235, 215)
 titleLabel.Font = Enum.Font.GothamBlack
 titleLabel.TextSize = 15
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -365,7 +553,7 @@ local xBtn = Instance.new("TextButton")
 xBtn.Size = UDim2.new(0, 26, 0, 26)
 xBtn.Position = UDim2.new(1, -30, 0, 3)
 xBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-xBtn.Text = "✕"
+xBtn.Text = "×"
 xBtn.TextColor3 = Color3.fromRGB(255,255,255)
 xBtn.Font = Enum.Font.GothamBold
 xBtn.TextSize = 13
@@ -427,7 +615,7 @@ local function setActiveTab(name)
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         else
             btn.BackgroundColor3 = Color3.fromRGB(15, 10, 28)
-            btn.TextColor3 = Color3.fromRGB(150, 200, 150)
+            btn.TextColor3 = Color3.fromRGB(170, 200, 170)
         end
     end
     for n, frame in pairs(tabContents) do
@@ -440,7 +628,7 @@ local function createTab(name)
     btn.Size = UDim2.new(1, 0, 0, 30)
     btn.BackgroundColor3 = Color3.fromRGB(15, 10, 28)
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(150, 200, 150)
+    btn.TextColor3 = Color3.fromRGB(170, 200, 170)
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 12
     btn.ZIndex = 7
@@ -477,7 +665,7 @@ local homeLabel = Instance.new("TextLabel")
 homeLabel.Size = UDim2.new(1, 0, 0, 40)
 homeLabel.BackgroundTransparency = 1
 homeLabel.Text = "Welcome to ¥harrz GUI"
-homeLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+homeLabel.TextColor3 = Color3.fromRGB(200, 220, 200)
 homeLabel.Font = Enum.Font.GothamBold
 homeLabel.TextSize = 14
 homeLabel.ZIndex = 7
@@ -520,8 +708,8 @@ local function createSideRow(sideIndex)
     textBox.BackgroundColor3 = Color3.fromRGB(20, 14, 38)
     textBox.Text = data.text
     textBox.PlaceholderText = data.label
-    textBox.TextColor3 = Color3.fromRGB(255, 220, 80)
-    textBox.PlaceholderColor3 = Color3.fromRGB(140, 120, 50)
+    textBox.TextColor3 = Color3.fromRGB(230, 210, 140)
+    textBox.PlaceholderColor3 = Color3.fromRGB(130, 115, 75)
     textBox.Font = Enum.Font.Gotham
     textBox.TextSize = 12
     textBox.ZIndex = 8
